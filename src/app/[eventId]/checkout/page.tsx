@@ -8,6 +8,7 @@ import Link from 'next/link';
 
 import { shopApi, ShopApiError } from '@/lib/api';
 import { useCartStore, cartTotal, lineUnitPrice, type CartItem } from '@/stores/cart-store';
+import { PaymentMethods } from '@/components/payment-methods';
 
 function formatPrice(amount: number, currency = 'EUR') {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(amount);
@@ -308,6 +309,8 @@ export default function CheckoutPage() {
               </div>
             </div>
           )}
+
+          <PaymentMethods />
 
           <button type="submit" className="btn btn--primary" disabled={!canSubmit} style={{ padding: '14px 22px', fontSize: 15 }}>
             {submitting ? 'Wird verbunden …' : 'Jetzt bezahlen'}
