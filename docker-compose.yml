@@ -1,0 +1,31 @@
+services:
+  openeos-shop:
+    image: ghcr.io/openeos-project/openeos-shop:latest
+    container_name: openeos-shop
+    restart: unless-stopped
+    networks:
+      - frontend
+    # Runtime env (server-side only). NEXT_PUBLIC_* are baked at build time
+    # and live in the GitHub Actions workflow.
+    environment:
+      - NODE_ENV=production
+    labels:
+      - "traefik.enable=true"
+      # HTTP Router - shop.openeos.de
+      - "traefik.http.routers.openeos-shop.rule=Host(`shop.openeos.de`)"
+      - "traefik.http.routers.openeos-shop.entrypoints=web"
+      - "traefik.http.routers.openeos-shop.middlewares=redirect-to-https"
+      # HTTPS Router - shop.openeos.de
+      - "traefik.http.routers.openeos-shop-secure.rule=Host(`shop.openeos.de`)"
+      - "traefik.http.routers.openeos-shop-secure.entrypoints=websecure"
+      - "traefik.http.routers.openeos-shop-secure.tls=true"
+      - "traefik.http.routers.openeos-shop-secure.tls.certresolver=letsencrypt"
+      # HTTP to HTTPS redirect
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      # Service
+      - "traefik.http.services.openeos-shop.loadbalancer.server.port=3004"
+
+networks:
+  frontend:
+    external: true
