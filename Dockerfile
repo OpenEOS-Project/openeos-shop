@@ -21,8 +21,10 @@ COPY . .
 # Build arguments for environment variables at build time
 # (NEXT_PUBLIC_* values are baked into the client bundle)
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_VERSION=dev
 
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm build

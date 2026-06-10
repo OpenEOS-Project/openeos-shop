@@ -15,13 +15,16 @@ import {
 } from '@/lib/api';
 import {
   useCartStore,
+  useCartHydration,
   cartCount,
   cartTotal,
   lineUnitPrice,
   type CartItem,
 } from '@/stores/cart-store';
 import { ProductOptionsSheet } from './components/product-options-sheet';
+import { APP_VERSION } from '@/lib/version';
 import { ProductImage } from '@/components/product-image';
+import { formatPrice } from '@/lib/format';
 
 const WEEKDAY_LABELS: Record<string, string> = {
   mon: 'Mo',
@@ -32,10 +35,6 @@ const WEEKDAY_LABELS: Record<string, string> = {
   sat: 'Sa',
   sun: 'So',
 };
-
-function formatPrice(amount: number, currency = 'EUR') {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(amount);
-}
 
 function todaysWindow(meta: ShopMeta): string | null {
   if (!meta.openingHours) return null;
@@ -64,8 +63,10 @@ export default function ShopEventPage() {
   const eventId = params.eventId;
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
+  const decrement = useCartStore((s) => s.decrement);
   const remove = useCartStore((s) => s.remove);
   const setEventId = useCartStore((s) => s.setEventId);
+  const cartHydrated = useCartHydration();
 
   const [optionsForProduct, setOptionsForProduct] = useState<ShopProduct | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -105,8 +106,8 @@ export default function ShopEventPage() {
   }, [eventId, setEventId]);
 
   useEffect(() => {
-    if (items.length === 0) setMobileCartOpen(false);
-  }, [items.length]);
+    if (cartHydrated && items.length === 0) setMobileCartOpen(false);
+  }, [cartHydrated, items.length]);
 
   const shopQuery = useQuery({
     queryKey: ['shop', eventId],
@@ -332,7 +333,6 @@ export default function ShopEventPage() {
                     {items.map((i) => (
                       <div key={i.signature ?? i.productId} className="shop-cart__row">
                         <div className="shop-cart__row-left">
-                          <span className="shop-cart__qty">{i.quantity}×</span>
                           <div style={{ minWidth: 0 }}>
                             <div className="shop-cart__name">{i.name}</div>
                             {i.options && i.options.length > 0 && (
@@ -348,6 +348,25 @@ export default function ShopEventPage() {
                           <span className="shop-cart__price mono">
                             {formatPrice(lineUnitPrice(i) * i.quantity, currency)}
                           </span>
+                          <div className="qty" style={{ borderRadius: 6, padding: 1 }}>
+                            <button
+                              type="button"
+                              aria-label={`${i.name} weniger`}
+                              onClick={() => i.signature && decrement(i.signature)}
+                              style={{ width: 22, height: 22, borderRadius: 4 }}
+                            >
+                              −
+                            </button>
+                            <span style={{ minWidth: 16, fontSize: 12 }}>{i.quantity}</span>
+                            <button
+                              type="button"
+                              aria-label={`${i.name} mehr`}
+                              onClick={() => i.signature && addItem({ productId: i.productId, name: i.name, unitPrice: i.unitPrice, options: i.options })}
+                              style={{ width: 22, height: 22, borderRadius: 4 }}
+                            >
+                              +
+                            </button>
+                          </div>
                           <button
                             type="button"
                             className="shop-cart__remove"
@@ -394,6 +413,13 @@ export default function ShopEventPage() {
           </aside>
         </div>
       </main>
+
+      <footer
+        className="mono"
+        style={{ textAlign: 'center', padding: '16px 0 24px', fontSize: 11, color: 'var(--mute-2)' }}
+      >
+        OpenEOS Shop v{APP_VERSION}
+      </footer>
 
       {/* Floating cart bar — mobile only */}
       {count > 0 && isOpen && (
@@ -442,7 +468,6 @@ export default function ShopEventPage() {
               {items.map((i) => (
                 <div key={i.signature ?? i.productId} className="shop-cart__row">
                   <div className="shop-cart__row-left">
-                    <span className="shop-cart__qty">{i.quantity}×</span>
                     <div style={{ minWidth: 0 }}>
                       <div className="shop-cart__name">{i.name}</div>
                       {i.options && i.options.length > 0 && (
@@ -458,6 +483,25 @@ export default function ShopEventPage() {
                     <span className="shop-cart__price mono">
                       {formatPrice(lineUnitPrice(i) * i.quantity, currency)}
                     </span>
+                    <div className="qty" style={{ borderRadius: 6, padding: 1 }}>
+                      <button
+                        type="button"
+                        aria-label={`${i.name} weniger`}
+                        onClick={() => i.signature && decrement(i.signature)}
+                        style={{ width: 22, height: 22, borderRadius: 4 }}
+                      >
+                        −
+                      </button>
+                      <span style={{ minWidth: 16, fontSize: 12 }}>{i.quantity}</span>
+                      <button
+                        type="button"
+                        aria-label={`${i.name} mehr`}
+                        onClick={() => i.signature && addItem({ productId: i.productId, name: i.name, unitPrice: i.unitPrice, options: i.options })}
+                        style={{ width: 22, height: 22, borderRadius: 4 }}
+                      >
+                        +
+                      </button>
+                    </div>
                     <button
                       type="button"
                       className="shop-cart__remove"
