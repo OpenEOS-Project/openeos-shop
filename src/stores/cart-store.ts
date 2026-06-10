@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -103,6 +104,8 @@ export const cartCount = (items: CartItem[]) =>
   items.reduce((acc, i) => acc + i.quantity, 0);
 
 export const lineUnitPrice = (item: CartItem): number => {
+  // Only positive modifiers count — must match the server-side recompute in
+  // events-shop-checkout.controller.ts, which rejects mismatched totals.
   const optionsTotal = (item.options ?? [])
     .filter((o) => !o.excluded && o.priceModifier > 0)
     .reduce((acc, o) => acc + o.priceModifier, 0);
@@ -111,3 +114,23 @@ export const lineUnitPrice = (item: CartItem): number => {
 
 export const cartTotal = (items: CartItem[]) =>
   items.reduce((acc, i) => acc + lineUnitPrice(i) * i.quantity, 0);
+
+// Hydration helpers (zustand persist rehydrates after mount)
+export const useCartHydration = (): boolean => {
+  const [hasHydrated, setHasHydrated] = useState(
+    () => useCartStore.persist.hasHydrated(),
+  );
+
+  useEffect(() => {
+    const unsubscribe = useCartStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+    // Guard against hydration completing between render and effect
+    if (useCartStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+    }
+    return unsubscribe;
+  }, []);
+
+  return hasHydrated;
+};

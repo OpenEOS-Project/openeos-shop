@@ -8,16 +8,13 @@ import type {
   SelectedOption,
   ShopProduct,
 } from '@/lib/api';
+import { formatPrice } from '@/lib/format';
 
 interface ProductOptionsSheetProps {
   product: ShopProduct;
   currency: string;
   onClose: () => void;
   onConfirm: (options: SelectedOption[]) => void;
-}
-
-function formatPrice(amount: number, currency: string) {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(amount);
 }
 
 function buildDefaults(groups: ProductOptionGroup[]): SelectedOption[] {
@@ -120,6 +117,8 @@ export function ProductOptionsSheet({
     ]);
   };
 
+  // Only positive modifiers count — must match lineUnitPrice in the cart
+  // store and the server-side recompute (INVALID_TOTAL otherwise).
   const totalExtras = selected
     .filter((s) => !s.excluded && s.priceModifier > 0)
     .reduce((acc, s) => acc + s.priceModifier, 0);

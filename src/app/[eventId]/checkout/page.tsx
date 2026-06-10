@@ -7,12 +7,9 @@ import { AlertCircle, ArrowLeft } from '@untitledui/icons';
 import Link from 'next/link';
 
 import { shopApi, ShopApiError } from '@/lib/api';
-import { useCartStore, cartTotal, lineUnitPrice, type CartItem } from '@/stores/cart-store';
+import { useCartStore, useCartHydration, cartTotal, lineUnitPrice, type CartItem } from '@/stores/cart-store';
 import { PaymentMethods } from '@/components/payment-methods';
-
-function formatPrice(amount: number, currency = 'EUR') {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(amount);
-}
+import { formatPrice } from '@/lib/format';
 
 interface FriendlyError {
   title: string;
@@ -63,6 +60,7 @@ export default function CheckoutPage() {
   const eventId = params.eventId;
 
   const items = useCartStore((s) => s.items);
+  const cartHydrated = useCartHydration();
 
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -84,10 +82,10 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (items.length === 0) {
+    if (cartHydrated && items.length === 0) {
       router.replace(`/${eventId}`);
     }
-  }, [items.length, eventId, router]);
+  }, [cartHydrated, items.length, eventId, router]);
 
   useEffect(() => {
     const isOpen = shopQuery.data?.data.shop.isOpenNow;
