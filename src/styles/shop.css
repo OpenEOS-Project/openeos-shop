@@ -937,7 +937,7 @@ button {
   }
 }
 
-/* Checkout: merged address rows */
+/* Checkout: name row */
 .checkout-row {
   display: grid;
   grid-template-columns: 1fr;
@@ -946,9 +946,6 @@ button {
 @media (min-width: 600px) {
   .checkout-row--name {
     grid-template-columns: 1fr 1fr;
-  }
-  .checkout-row--addr {
-    grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 

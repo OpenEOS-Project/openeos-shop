@@ -135,13 +135,8 @@ export const shopApi = {
     eventId: string,
     body: {
       email: string;
-      customerName?: { firstName?: string; lastName?: string };
-      address?: {
-        street?: string;
-        postalCode?: string;
-        city?: string;
-        country?: string;
-      };
+      /** Required — shows up on the order for pickup. */
+      customerName: { firstName: string; lastName: string };
       fulfillmentType: 'counter_pickup' | 'table_service';
       tableNumber?: string;
       items: Array<{

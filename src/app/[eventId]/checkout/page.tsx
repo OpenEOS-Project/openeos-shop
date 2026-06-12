@@ -65,10 +65,6 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [street, setStreet] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [city, setCity] = useState('');
-  const [country, setCountry] = useState('');
   const [fulfillment, setFulfillment] = useState<'counter_pickup' | 'table_service'>('counter_pickup');
   const [tableNumber, setTableNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -100,8 +96,9 @@ export default function CheckoutPage() {
   const total = itemsTotal + (items.length > 0 ? serviceFee : 0);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const nameValid = firstName.trim().length >= 2 && lastName.trim().length >= 2;
   const tableValid = fulfillment !== 'table_service' || tableNumber.trim().length > 0;
-  const canSubmit = emailValid && tableValid && items.length > 0 && !submitting;
+  const canSubmit = emailValid && nameValid && tableValid && items.length > 0 && !submitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,19 +108,7 @@ export default function CheckoutPage() {
     try {
       const response = await shopApi.createCheckout(eventId, {
         email: email.trim(),
-        customerName:
-          firstName || lastName
-            ? { firstName: firstName.trim() || undefined, lastName: lastName.trim() || undefined }
-            : undefined,
-        address:
-          street || postalCode || city || country
-            ? {
-                street: street.trim() || undefined,
-                postalCode: postalCode.trim() || undefined,
-                city: city.trim() || undefined,
-                country: country.trim() || undefined,
-              }
-            : undefined,
+        customerName: { firstName: firstName.trim(), lastName: lastName.trim() },
         fulfillmentType: fulfillment,
         tableNumber: fulfillment === 'table_service' ? tableNumber.trim() : undefined,
         items: items.map((i) => ({
@@ -249,39 +234,19 @@ export default function CheckoutPage() {
               border: '1px solid color-mix(in oklab, var(--ink) 8%, transparent)',
             }}
           >
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>Rechnungsadresse (optional)</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>Dein Name *</h2>
             <p style={{ fontSize: 12, color: 'var(--mute)', margin: '0 0 14px' }}>
-              Alle Felder sind freiwillig — nur für deinen Beleg.
+              Steht auf deiner Bestellung — so finden wir dich bei der Ausgabe.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="checkout-row checkout-row--name">
-                <label className="field">
-                  <span>Vorname</span>
-                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" />
-                </label>
-                <label className="field">
-                  <span>Nachname</span>
-                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
-                </label>
-              </div>
+            <div className="checkout-row checkout-row--name">
               <label className="field">
-                <span>Straße &amp; Nr.</span>
-                <input value={street} onChange={(e) => setStreet(e.target.value)} autoComplete="street-address" />
+                <span>Vorname *</span>
+                <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" required />
               </label>
-              <div className="checkout-row checkout-row--addr">
-                <label className="field">
-                  <span>PLZ</span>
-                  <input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} autoComplete="postal-code" />
-                </label>
-                <label className="field">
-                  <span>Stadt</span>
-                  <input value={city} onChange={(e) => setCity(e.target.value)} autoComplete="address-level2" />
-                </label>
-                <label className="field">
-                  <span>Land</span>
-                  <input value={country} onChange={(e) => setCountry(e.target.value)} autoComplete="country-name" placeholder="Deutschland" />
-                </label>
-              </div>
+              <label className="field">
+                <span>Nachname *</span>
+                <input value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" required />
+              </label>
             </div>
           </section>
 
