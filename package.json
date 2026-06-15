@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@openeos/pos-icons": "0.3.0",
+    "@openeos/pos-icons": "0.4.0",
     "@tanstack/react-query": "^5.96.2",
     "@untitledui/icons": "^0.0.22",
     "next": "^16.2.2",
