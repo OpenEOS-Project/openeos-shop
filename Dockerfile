@@ -4,18 +4,16 @@
 FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10 --activate
 
-# Install dependencies (vendor/ must be present because pos-icons is a file: dep)
+# Install dependencies
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY vendor ./vendor
 RUN pnpm install --frozen-lockfile --prod=false
 
 # Build the application
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/vendor ./vendor
 COPY . .
 
 # Build arguments for environment variables at build time
