@@ -1,5 +1,6 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010/api';
+/* Frueher eine Modul-Konstante aus NEXT_PUBLIC_API_URL, also beim Build
+   festgeschrieben. Jetzt zur Laufzeit — siehe lib/runtime-config.ts. */
+import { getApiBase } from '@/lib/runtime-config';
 
 export class ShopApiError extends Error {
   status: number;
@@ -25,7 +26,7 @@ async function parseErrorPayload(res: Response): Promise<{ code: string | null; 
 }
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     cache: 'no-store',
     headers: { Accept: 'application/json' },
   });
@@ -37,7 +38,7 @@ async function get<T>(path: string): Promise<T> {
 }
 
 async function post<T, B = unknown>(path: string, body: B): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(body),

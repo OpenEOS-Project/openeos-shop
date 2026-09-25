@@ -3,6 +3,7 @@ import { Geist, JetBrains_Mono, Archivo_Black } from 'next/font/google';
 
 import '@/styles/shop.css';
 import { Providers } from './providers';
+import { RuntimeConfigScript } from '@/components/runtime-config-script';
 
 const geist = Geist({
   subsets: ['latin'],
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de" className={`${geist.variable} ${jetbrains.variable} ${archivo.variable}`}>
       <body>
+        <RuntimeConfigScript />
         <Providers>{children}</Providers>
       </body>
     </html>
