@@ -575,7 +575,11 @@ function ProductCard({ product, currency, disabled, onAdd }: ProductCardProps) {
 }
 
 function ClosedCard({ meta, event }: { meta: ShopMeta; event: ShopEvent }) {
-  const now = Date.now();
+  /* Einmal beim Einhaengen statt bei jedem Durchlauf. `Date.now()` direkt im
+     Rumpf ist nicht seiteneffektfrei: Server und Browser lesen verschiedene
+     Zeiten, und die Meldung nach dem Abgleich wiche von der aus der
+     Auslieferung ab. Mit dem Startwert steht in beiden dieselbe Zeit. */
+  const [now] = useState(() => Date.now());
   const fmtDate = (d: Date) => d.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' });
   const next = upcomingWindow(meta);
 
