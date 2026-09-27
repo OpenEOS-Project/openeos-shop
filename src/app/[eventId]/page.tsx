@@ -26,6 +26,7 @@ import { ProductOptionsSheet } from './components/product-options-sheet';
 import { APP_VERSION } from '@/lib/version';
 import { ProductImage } from '@/components/product-image';
 import { formatPrice } from '@/lib/format';
+import Link from 'next/link';
 
 const WINDOW_DAY = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
 const WINDOW_TIME = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -160,10 +161,10 @@ export default function ShopEventPage() {
     return (
       <>
         <div className="shop-logo-bar">
-          <a href="/" aria-label="OpenEOS Shop">
+          <Link href="/" aria-label="OpenEOS Shop">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo_dark.png" alt="OpenEOS" />
-          </a>
+          </Link>
         </div>
         <div className="empty">
           <h2>Shop nicht gefunden</h2>
@@ -199,10 +200,10 @@ export default function ShopEventPage() {
     <>
       {/* Logo bar */}
       <div className="shop-logo-bar">
-        <a href="/" aria-label="OpenEOS Shop">
+        <Link href="/" aria-label="OpenEOS Shop">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo_dark.png" alt="OpenEOS" />
-        </a>
+        </Link>
       </div>
 
       {/* Context strip */}
@@ -574,7 +575,11 @@ function ProductCard({ product, currency, disabled, onAdd }: ProductCardProps) {
 }
 
 function ClosedCard({ meta, event }: { meta: ShopMeta; event: ShopEvent }) {
-  const now = Date.now();
+  /* Einmal beim Einhaengen statt bei jedem Durchlauf. `Date.now()` direkt im
+     Rumpf ist nicht seiteneffektfrei: Server und Browser lesen verschiedene
+     Zeiten, und die Meldung nach dem Abgleich wiche von der aus der
+     Auslieferung ab. Mit dem Startwert steht in beiden dieselbe Zeit. */
+  const [now] = useState(() => Date.now());
   const fmtDate = (d: Date) => d.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' });
   const next = upcomingWindow(meta);
 

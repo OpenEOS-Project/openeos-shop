@@ -43,6 +43,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Bis hierher gab es weder eine ESLint-Konfiguration noch die Pakete
+      # dafuer; geprueft wurde allein, ob der Build durchlaeuft. Echte Fehler
+      # blockieren jetzt, Altlasten stehen als Warnung in eslint.config.mjs.
+      - name: Lint
+        run: pnpm lint
+
       - name: Build
         run: pnpm build
 
