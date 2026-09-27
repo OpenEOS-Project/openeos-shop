@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -115,22 +115,14 @@ export const lineUnitPrice = (item: CartItem): number => {
 export const cartTotal = (items: CartItem[]) =>
   items.reduce((acc, i) => acc + lineUnitPrice(i) * i.quantity, 0);
 
-// Hydration helpers (zustand persist rehydrates after mount)
-export const useCartHydration = (): boolean => {
-  const [hasHydrated, setHasHydrated] = useState(
+// Hydration helpers (zustand persist rehydrates after mount). Statt State +
+// Effekt liest useSyncExternalStore hasHydrated() bei jedem Abgleich direkt
+// ab — die Race "Hydration wird zwischen Render und Effekt fertig" (die den
+// Leer-Warenkorb-Flackerer verursacht hat) kann so gar nicht mehr auftreten,
+// weil kein zusaetzlicher Render-Durchlauf noetig ist.
+export const useCartHydration = (): boolean =>
+  useSyncExternalStore(
+    useCartStore.persist.onFinishHydration,
     () => useCartStore.persist.hasHydrated(),
+    () => false,
   );
-
-  useEffect(() => {
-    const unsubscribe = useCartStore.persist.onFinishHydration(() => {
-      setHasHydrated(true);
-    });
-    // Guard against hydration completing between render and effect
-    if (useCartStore.persist.hasHydrated()) {
-      setHasHydrated(true);
-    }
-    return unsubscribe;
-  }, []);
-
-  return hasHydrated;
-};

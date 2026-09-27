@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { X, Check } from '@untitledui/icons';
 
 import type {
@@ -70,12 +70,12 @@ export function ProductOptionsSheet({
   onConfirm,
 }: ProductOptionsSheetProps) {
   const groups = useMemo(() => product.options?.groups ?? [], [product]);
+  // Kein Effekt, der `selected` bei Produktwechsel neu setzt: der
+  // Aufrufer haengt hier ein `key={product.id}` dran, wodurch React die
+  // Komponente bei Produktwechsel neu montiert statt sie wiederzuverwenden.
+  // Der useState-Initializer laeuft dann pro Produkt genau einmal frisch.
   const [selected, setSelected] = useState<SelectedOption[]>(() => buildDefaults(groups));
   const [closing, setClosing] = useState(false);
-
-  useEffect(() => {
-    setSelected(buildDefaults(groups));
-  }, [groups, product.id]);
 
   const isOptionSelected = (groupName: string, optionName: string) => {
     const o = selected.find((s) => s.group === groupName && s.option === optionName);
