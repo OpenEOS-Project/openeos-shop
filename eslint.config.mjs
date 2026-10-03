@@ -27,12 +27,6 @@ const eslintConfig = [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-empty-object-type': 'warn',
       'react/no-unescaped-entities': 'warn',
-      /* Drei Altbefunde im Warenkorb und in der Produktauswahl. Die Regel
-         ist berechtigt — setState direkt im Effekt erzwingt einen zweiten
-         Durchlauf —, aber es sind Eingriffe in den Bestellablauf, die ohne
-         laufende Kasse nicht gegengeprueft werden koennen. Sichtbar als
-         Warnung, bis jemand sie mit Test am Geraet aufloest. */
-      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ];

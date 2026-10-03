@@ -97,9 +97,24 @@ export default function ShopEventPage() {
     setEventId(eventId);
   }, [eventId, setEventId]);
 
-  useEffect(() => {
-    if (cartHydrated && items.length === 0) setMobileCartOpen(false);
-  }, [cartHydrated, items.length]);
+  // Schliesst die mobile Warenkorb-Sheet, sobald der Warenkorb leer wird —
+  // egal ob durch Entfernen des letzten Artikels, Event-Wechsel (siehe
+  // setEventId oben) oder einen initial schon leeren, aber noch nicht
+  // hydrierten Store. Statt eines Effekts (der einen zusaetzlichen
+  // Render-Durchlauf braeuchte und kurz die leere Sheet aufblitzen liesse)
+  // wird der Wechsel waehrend des Renderns erkannt und der State direkt
+  // angepasst — das von React dokumentierte Muster fuer "State anhand einer
+  // Aenderung eines anderen Werts anpassen" (Vorwert in einem State statt in
+  // einem Ref, da Refs waehrend des Renderns nicht gelesen/geschrieben
+  // werden duerfen).
+  const cartIsEmpty = cartHydrated && items.length === 0;
+  const [prevCartIsEmpty, setPrevCartIsEmpty] = useState(cartIsEmpty);
+  if (cartIsEmpty !== prevCartIsEmpty) {
+    setPrevCartIsEmpty(cartIsEmpty);
+    if (cartIsEmpty && mobileCartOpen) {
+      setMobileCartOpen(false);
+    }
+  }
 
   const shopQuery = useQuery({
     queryKey: ['shop', eventId],
@@ -537,6 +552,10 @@ export default function ShopEventPage() {
 
       {optionsForProduct && (
         <ProductOptionsSheet
+          // key erzwingt eine frische Instanz pro Produkt, damit die
+          // Auswahl darin garantiert mit den Defaults des neuen Produkts
+          // startet (siehe product-options-sheet.tsx).
+          key={optionsForProduct.id}
           product={optionsForProduct}
           currency={currency}
           onClose={() => setOptionsForProduct(null)}
