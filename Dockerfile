@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Base image with pnpm enabled (pnpm v10 — v11 has stricter build-script gating)
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # Install dependencies
@@ -28,7 +28,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
 # Production image
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
