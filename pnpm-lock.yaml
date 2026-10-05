@@ -12,8 +12,8 @@ importers:
         specifier: 0.4.0
         version: 0.4.0(react@19.2.5)
       '@openeos/ui':
-        specifier: 0.3.2
-        version: 0.3.2(next@16.2.4(@babel/core@7.29.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)
+        specifier: 0.3.3
+        version: 0.3.3(next@16.2.4(@babel/core@7.29.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)
       '@tanstack/react-query':
         specifier: ^5.96.2
         version: 5.100.5(react@19.2.5)
@@ -452,8 +452,8 @@ packages:
     peerDependencies:
       react: '>=18'
 
-  '@openeos/ui@0.3.2':
-    resolution: {integrity: sha512-eY7Xjvi05OwKpzw96I1k6xsNPrcO0EwH4a/xfNTx0K6NX1KFFNh/KFMJTqbcH3GOMAWobBztJevPvp49g4F+7g==}
+  '@openeos/ui@0.3.3':
+    resolution: {integrity: sha512-3x2DCDNI6dWZuyiqbDoBs4rK6HhysPBeoYUIXdMXNiI0PWu0Lj3g9gxIv8joI7TvYxlb9Ob0XqyMZppAzXk7DQ==}
     peerDependencies:
       next: '>=15'
       react: '>=18'
@@ -2220,7 +2220,7 @@ snapshots:
     dependencies:
       react: 19.2.5
 
-  '@openeos/ui@0.3.2(next@16.2.4(@babel/core@7.29.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)':
+  '@openeos/ui@0.3.3(next@16.2.4(@babel/core@7.29.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)':
     dependencies:
       react: 19.2.5
     optionalDependencies:

@@ -33,7 +33,8 @@
   /* fonts come from @openeos/ui/fonts (next/font/local) as --font-oe-* */
   --f-sans: var(--font-oe-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --f-mono: var(--font-oe-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
-  --f-display: var(--font-oe-display), var(--f-sans);
+  /* headlines: Geist 800 (@openeos/ui 0.3.3), same file as --f-sans */
+  --f-display: var(--f-sans);
 }
 
 * {
@@ -141,10 +142,9 @@ button {
 }
 .shop-hero h1 {
   font-family: var(--f-display);
-  font-variation-settings: "opsz" 96;
   font-size: clamp(36px, 6vw, 80px);
   line-height: 0.98;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.045em;
   font-weight: 800;
   margin: 14px 0 0;
   text-wrap: balance;
@@ -1069,11 +1069,10 @@ button {
 }
 .not-found__title {
   font-family: var(--f-display);
-  font-variation-settings: "opsz" 96;
   font-weight: 800;
   font-size: clamp(36px, 6vw, 64px);
   line-height: 0.98;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   margin: 0;
   text-wrap: balance;
 }
