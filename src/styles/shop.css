@@ -30,10 +30,10 @@
   --max: 1200px;
   --pad: clamp(16px, 4vw, 32px);
 
-  /* fonts come from next/font as CSS variables */
-  --f-sans: var(--font-geist), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --f-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
-  --f-display: var(--font-archivo-black), var(--f-sans);
+  /* fonts come from @openeos/ui/fonts (next/font/local) as --font-oe-* */
+  --f-sans: var(--font-oe-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --f-mono: var(--font-oe-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --f-display: var(--font-oe-display), var(--f-sans);
 }
 
 * {
@@ -140,8 +140,10 @@ button {
   padding: clamp(36px, 6vw, 72px) 0 clamp(20px, 3vw, 32px);
 }
 .shop-hero h1 {
+  font-family: var(--f-display);
+  font-variation-settings: "opsz" 96;
   font-size: clamp(36px, 6vw, 80px);
-  line-height: 0.95;
+  line-height: 0.98;
   letter-spacing: -0.03em;
   font-weight: 800;
   margin: 14px 0 0;
@@ -1041,4 +1043,45 @@ button {
 .field input:focus {
   border-color: var(--green-ink);
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--green-ink) 25%, transparent);
+}
+
+/* 404 — unbekannte Event-IDs und fehlende Dateien */
+.not-found {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.not-found__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  padding: 48px var(--pad) 96px;
+}
+.not-found__code {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green-ink);
+}
+.not-found__title {
+  font-family: var(--f-display);
+  font-variation-settings: "opsz" 96;
+  font-weight: 800;
+  font-size: clamp(36px, 6vw, 64px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-wrap: balance;
+}
+.not-found__text {
+  max-width: 440px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--mute);
+  text-wrap: pretty;
 }
