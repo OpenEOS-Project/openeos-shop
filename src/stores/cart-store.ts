@@ -120,9 +120,22 @@ export const cartTotal = (items: CartItem[]) =>
 // ab — die Race "Hydration wird zwischen Render und Effekt fertig" (die den
 // Leer-Warenkorb-Flackerer verursacht hat) kann so gar nicht mehr auftreten,
 // weil kein zusaetzlicher Render-Durchlauf noetig ist.
+//
+// Auf dem Server gibt es kein localStorage; zustand/persist haengt dann gar
+// keine `persist`-API an den Store (trotz Typ). Deshalb nie direkt auf
+// `useCartStore.persist` zugreifen, sondern ueber diesen Guard — sonst
+// scheitert schon das SSR mit "reading 'onFinishHydration'" (HTTP 500).
+const persistApi = (): typeof useCartStore.persist | undefined =>
+  useCartStore.persist as typeof useCartStore.persist | undefined;
+
+// Modul-Ebene, damit die Referenz stabil bleibt und useSyncExternalStore
+// nicht bei jedem Render neu abonniert.
+const subscribeHydration = (onStoreChange: () => void): (() => void) =>
+  persistApi()?.onFinishHydration(onStoreChange) ?? (() => {});
+
+const getHydrated = (): boolean => persistApi()?.hasHydrated() ?? false;
+
+const getServerHydrated = (): boolean => false;
+
 export const useCartHydration = (): boolean =>
-  useSyncExternalStore(
-    useCartStore.persist.onFinishHydration,
-    () => useCartStore.persist.hasHydrated(),
-    () => false,
-  );
+  useSyncExternalStore(subscribeHydration, getHydrated, getServerHydrated);
