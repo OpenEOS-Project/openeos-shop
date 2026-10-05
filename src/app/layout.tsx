@@ -5,9 +5,10 @@ import '@/styles/shop.css';
 import { Providers } from './providers';
 import { RuntimeConfigScript } from '@/components/runtime-config-script';
 
-/* Geist, Bricolage Grotesque und JetBrains Mono aus @openeos/ui —
-   lokal eingebunden (next/font/local), ohne Anfrage bei Google. Setzt
-   --font-oe-sans/-display/-mono; shop.css verbindet sie mit --f-*. */
+/* Geist und JetBrains Mono aus @openeos/ui — lokal eingebunden
+   (next/font/local), ohne Anfrage bei Google. Setzt --font-oe-sans und
+   --font-oe-mono; shop.css verbindet sie mit --f-*. Überschriften sind
+   Geist 800. */
 
 export const metadata: Metadata = {
   title: 'OpenEOS Shop',
