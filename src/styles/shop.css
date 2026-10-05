@@ -120,6 +120,20 @@ button {
   color: var(--green);
   font-weight: 600;
 }
+.shop-header__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+  letter-spacing: 0.06em;
+}
+.shop-header__live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: currentColor;
+}
 
 /* Hero */
 .shop-hero {
@@ -180,15 +194,22 @@ button {
   margin: 12px 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 4px 16px;
+  /* Breit genug fuer "FR., 04.09." + "10:00 – 18:00" in einer Zeile; auf
+     schmalen Geraeten eine Spalte statt zerbrochener Eintraege. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 220px));
+  gap: 4px 24px;
 }
 .shop-hours-list li {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: baseline;
+  gap: 0 12px;
   font-size: 12px;
   color: var(--ink-2);
+}
+/* Umbruch hoechstens zwischen Tag und Zeit, nie innerhalb. */
+.shop-hours-list li > span {
+  white-space: nowrap;
 }
 .shop-hours-list__day {
   color: var(--mute);
@@ -196,6 +217,7 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 11px;
+  min-width: 8.5em;
 }
 
 /* Layout: products left, cart right (md+) */
@@ -372,15 +394,62 @@ button {
   padding-right: 4px;
 }
 .shop-cart__row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  /* Zeile 1: Name/Optionen + Preis, Zeile 2: Stepper + Entfernen. So passen
+     44px grosse Bedienziele, ohne den Namen auf ein paar Zeichen zu kuerzen. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 8px;
   font-size: 13px;
+}
+.shop-cart__row + .shop-cart__row {
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in oklab, var(--ink) 6%, transparent);
 }
 .shop-cart__row-left {
   display: flex;
   gap: 6px;
   min-width: 0;
+}
+.shop-cart__controls {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+/* Mengen-Stepper im Warenkorb: Bedienziele mindestens 44 x 44 px. */
+.shop-cart__stepper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--paper);
+  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border-radius: 99px;
+}
+.shop-cart__stepper button {
+  width: 44px;
+  height: 44px;
+  border-radius: 99px;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shop-cart__stepper button:hover {
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+.shop-cart__stepper span {
+  min-width: 24px;
+  text-align: center;
+  font-family: var(--f-mono);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
 }
 .shop-cart__qty {
   font-family: var(--f-mono);
@@ -406,19 +475,13 @@ button {
   flex-shrink: 0;
   font-weight: 600;
 }
-.shop-cart__row-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
 .shop-cart__remove {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 99px;
   background: transparent;
   border: none;
   color: var(--mute);
@@ -510,6 +573,8 @@ button {
   color: var(--mute);
   cursor: pointer;
   border-radius: 8px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 6px;
   display: inline-flex;
   align-items: center;
