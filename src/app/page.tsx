@@ -1,4 +1,33 @@
-export default function HomePage() {
+import { headers } from 'next/headers';
+
+/** Erlaubt nur einen nackten Hostnamen (optional mit Port) — der Wert kommt aus
+    einem Request-Header und wird nur angezeigt, aber Unsinn soll nicht durch. */
+const HOST_PATTERN = /^[a-z0-9.-]+(:\d{1,5})?$/i;
+
+/**
+ * Basis-URL des Shops, wie Besucher sie sehen. `SHOP_PUBLIC_URL` (Laufzeit-Env)
+ * gewinnt; sonst aus den Headern des Reverse-Proxys bzw. dem Host-Header.
+ */
+async function resolveShopBaseUrl(): Promise<string | null> {
+  const configured = process.env.SHOP_PUBLIC_URL?.trim().replace(/\/+$/, '');
+  if (configured) return configured;
+
+  const h = await headers();
+  const host = (h.get('x-forwarded-host') ?? h.get('host'))?.split(',')[0]?.trim();
+  if (!host || !HOST_PATTERN.test(host)) return null;
+  const forwardedProto = h.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const proto =
+    forwardedProto === 'http' || forwardedProto === 'https'
+      ? forwardedProto
+      : /^(localhost|127\.0\.0\.1)(:|$)/.test(host)
+        ? 'http'
+        : 'https';
+  return `${proto}://${host}`;
+}
+
+export default async function HomePage() {
+  const baseUrl = await resolveShopBaseUrl();
+
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 var(--pad)' }}>
       <div style={{ maxWidth: 640, textAlign: 'center' }}>
@@ -34,12 +63,19 @@ export default function HomePage() {
             margin: 0,
           }}
         >
-          Wähle dein Event
+          Öffne den Link deines Events
         </h1>
         <p style={{ fontSize: 16, color: 'var(--mute)', marginTop: 18 }}>
-          Du hast einen Link zum Event-Shop bekommen? Öffne ihn — er sieht aus wie
-          <span className="mono" style={{ color: 'var(--ink)' }}>
-            {' '}https://shop.openeos.de/&lt;event-id&gt;
+          Jeder Event-Shop hat eine eigene Adresse. Den Link dazu bekommst du vom Veranstalter —
+          zum Beispiel als QR-Code vor Ort, auf einem Flyer oder per Nachricht.
+        </p>
+        <p style={{ fontSize: 14, color: 'var(--mute)', marginTop: 12 }}>
+          Er sieht so aus:
+          {/* Umbruch hoechstens vor "/<event-id>", nie mitten in Host oder Platzhalter. */}
+          <span className="mono" style={{ display: 'block', color: 'var(--ink)', marginTop: 4 }}>
+            <span style={{ whiteSpace: 'nowrap' }}>{baseUrl ?? '…'}</span>
+            <wbr />
+            <span style={{ whiteSpace: 'nowrap' }}>/&lt;event-id&gt;</span>
           </span>
         </p>
       </div>

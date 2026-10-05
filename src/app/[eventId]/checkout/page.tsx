@@ -143,7 +143,9 @@ export default function CheckoutPage() {
         Kasse
       </h1>
       <p style={{ color: 'var(--mute)', marginTop: 8 }}>
-        E-Mail ist Pflicht. Name + Anschrift sind freiwillig — wir nutzen sie nur für deinen Beleg.
+        Pflichtfelder sind mit * markiert: E-Mail, Vor- und Nachname — bei „An den Tisch“ auch die
+        Tischnummer. An deine E-Mail schicken wir die Bestellbestätigung, dein Name steht für die
+        Ausgabe auf der Bestellung.
       </p>
 
       <div className="checkout-layout">

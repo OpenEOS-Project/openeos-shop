@@ -141,6 +141,8 @@ export default function ShopEventPage() {
   const shopMeta = shopQuery.data?.data.shop;
   const isOpen = shopMeta?.isOpenNow ?? true;
   const isTest = shopMeta?.testMode ?? false;
+  const isLive =
+    shopQuery.data?.data.event.status === 'active' && !isTest && shopMeta?.isOpenNow === true;
   const serviceFee = shopMeta?.serviceFee ?? 0;
   const event = shopQuery.data?.data.event;
 
@@ -226,9 +228,14 @@ export default function ShopEventPage() {
         <span className="shop-header__crumb">
           <b>{event.organizationName}</b> · Online-Shop
         </span>
-        <span className="mono" style={{ color: 'var(--mute-2)' }}>
-          {isTest ? 'TEST · ' : ''}LIVE
-        </span>
+        {/* LIVE nur, wenn wirklich bestellt werden kann: Veranstaltung aktiv
+            (nicht Testmodus) und gerade innerhalb der Öffnungszeiten. Im
+            Testmodus meldet die API isOpenNow immer true — dort steht TEST. */}
+        {isTest ? (
+          <span className="mono" style={{ color: 'var(--mute-2)' }}>TEST</span>
+        ) : isLive ? (
+          <span className="mono shop-header__live">LIVE</span>
+        ) : null}
       </header>
 
       <main className="shop-wrap">
@@ -338,52 +345,14 @@ export default function ShopEventPage() {
                 <>
                   <div className="shop-cart__items">
                     {items.map((i) => (
-                      <div key={i.signature ?? i.productId} className="shop-cart__row">
-                        <div className="shop-cart__row-left">
-                          <div style={{ minWidth: 0 }}>
-                            <div className="shop-cart__name">{i.name}</div>
-                            {i.options && i.options.length > 0 && (
-                              <div className="shop-cart__opts">
-                                {i.options.map((o) =>
-                                  o.excluded ? `ohne ${o.option}` : `+ ${o.option}`,
-                                ).join(' · ')}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="shop-cart__row-right">
-                          <span className="shop-cart__price mono">
-                            {formatPrice(lineUnitPrice(i) * i.quantity, currency)}
-                          </span>
-                          <div className="qty" style={{ borderRadius: 6, padding: 1 }}>
-                            <button
-                              type="button"
-                              aria-label={`${i.name} weniger`}
-                              onClick={() => i.signature && decrement(i.signature)}
-                              style={{ width: 22, height: 22, borderRadius: 4 }}
-                            >
-                              −
-                            </button>
-                            <span style={{ minWidth: 16, fontSize: 12 }}>{i.quantity}</span>
-                            <button
-                              type="button"
-                              aria-label={`${i.name} mehr`}
-                              onClick={() => i.signature && addItem({ productId: i.productId, name: i.name, unitPrice: i.unitPrice, options: i.options })}
-                              style={{ width: 22, height: 22, borderRadius: 4 }}
-                            >
-                              +
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            className="shop-cart__remove"
-                            aria-label={`${i.name} entfernen`}
-                            onClick={() => i.signature && remove(i.signature)}
-                          >
-                            <Trash01 style={{ width: 14, height: 14 }} />
-                          </button>
-                        </div>
-                      </div>
+                      <CartLine
+                        key={i.signature ?? i.productId}
+                        item={i}
+                        currency={currency}
+                        onDecrement={decrement}
+                        onIncrement={addItem}
+                        onRemove={remove}
+                      />
                     ))}
                   </div>
                   {serviceFee > 0 && (
@@ -473,52 +442,14 @@ export default function ShopEventPage() {
             </div>
             <div className="cart-sheet__items">
               {items.map((i) => (
-                <div key={i.signature ?? i.productId} className="shop-cart__row">
-                  <div className="shop-cart__row-left">
-                    <div style={{ minWidth: 0 }}>
-                      <div className="shop-cart__name">{i.name}</div>
-                      {i.options && i.options.length > 0 && (
-                        <div className="shop-cart__opts">
-                          {i.options
-                            .map((o) => (o.excluded ? `ohne ${o.option}` : `+ ${o.option}`))
-                            .join(' · ')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="shop-cart__row-right">
-                    <span className="shop-cart__price mono">
-                      {formatPrice(lineUnitPrice(i) * i.quantity, currency)}
-                    </span>
-                    <div className="qty" style={{ borderRadius: 6, padding: 1 }}>
-                      <button
-                        type="button"
-                        aria-label={`${i.name} weniger`}
-                        onClick={() => i.signature && decrement(i.signature)}
-                        style={{ width: 22, height: 22, borderRadius: 4 }}
-                      >
-                        −
-                      </button>
-                      <span style={{ minWidth: 16, fontSize: 12 }}>{i.quantity}</span>
-                      <button
-                        type="button"
-                        aria-label={`${i.name} mehr`}
-                        onClick={() => i.signature && addItem({ productId: i.productId, name: i.name, unitPrice: i.unitPrice, options: i.options })}
-                        style={{ width: 22, height: 22, borderRadius: 4 }}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      className="shop-cart__remove"
-                      aria-label={`${i.name} entfernen`}
-                      onClick={() => i.signature && remove(i.signature)}
-                    >
-                      <Trash01 style={{ width: 14, height: 14 }} />
-                    </button>
-                  </div>
-                </div>
+                <CartLine
+                  key={i.signature ?? i.productId}
+                  item={i}
+                  currency={currency}
+                  onDecrement={decrement}
+                  onIncrement={addItem}
+                  onRemove={remove}
+                />
               ))}
             </div>
             {serviceFee > 0 && (
@@ -571,6 +502,64 @@ interface ProductCardProps {
   currency: string;
   disabled: boolean;
   onAdd: () => void;
+}
+
+interface CartLineProps {
+  item: CartItem;
+  currency: string;
+  onDecrement: (signature: string) => void;
+  onIncrement: (item: Omit<CartItem, 'quantity' | 'signature'>) => void;
+  onRemove: (signature: string) => void;
+}
+
+/** Eine Warenkorbzeile — gleich in der Seitenleiste und im mobilen Sheet. */
+function CartLine({ item, currency, onDecrement, onIncrement, onRemove }: CartLineProps) {
+  const { signature } = item;
+  return (
+    <div className="shop-cart__row">
+      <div className="shop-cart__row-left">
+        <div style={{ minWidth: 0 }}>
+          <div className="shop-cart__name">{item.name}</div>
+          {item.options && item.options.length > 0 && (
+            <div className="shop-cart__opts">
+              {item.options.map((o) => (o.excluded ? `ohne ${o.option}` : `+ ${o.option}`)).join(' · ')}
+            </div>
+          )}
+        </div>
+      </div>
+      <span className="shop-cart__price mono">{formatPrice(lineUnitPrice(item) * item.quantity, currency)}</span>
+      <div className="shop-cart__controls">
+        <div className="shop-cart__stepper">
+          <button
+            type="button"
+            aria-label={`${item.name} weniger`}
+            onClick={() => signature && onDecrement(signature)}
+          >
+            −
+          </button>
+          <span>{item.quantity}</span>
+          <button
+            type="button"
+            aria-label={`${item.name} mehr`}
+            onClick={() =>
+              signature &&
+              onIncrement({ productId: item.productId, name: item.name, unitPrice: item.unitPrice, options: item.options })
+            }
+          >
+            +
+          </button>
+        </div>
+        <button
+          type="button"
+          className="shop-cart__remove"
+          aria-label={`${item.name} entfernen`}
+          onClick={() => signature && onRemove(signature)}
+        >
+          <Trash01 style={{ width: 18, height: 18 }} />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function ProductCard({ product, currency, disabled, onAdd }: ProductCardProps) {
