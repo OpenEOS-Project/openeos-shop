@@ -1,28 +1,13 @@
 import type { Metadata } from 'next';
-import { Geist, JetBrains_Mono, Archivo_Black } from 'next/font/google';
+import { openEosFonts } from '@openeos/ui/fonts';
 
 import '@/styles/shop.css';
 import { Providers } from './providers';
 import { RuntimeConfigScript } from '@/components/runtime-config-script';
 
-const geist = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist',
-  display: 'swap',
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jetbrains',
-  display: 'swap',
-});
-
-const archivo = Archivo_Black({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-archivo-black',
-  display: 'swap',
-});
+/* Geist, Bricolage Grotesque und JetBrains Mono aus @openeos/ui —
+   lokal eingebunden (next/font/local), ohne Anfrage bei Google. Setzt
+   --font-oe-sans/-display/-mono; shop.css verbindet sie mit --f-*. */
 
 export const metadata: Metadata = {
   title: 'OpenEOS Shop',
@@ -31,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${geist.variable} ${jetbrains.variable} ${archivo.variable}`}>
+    <html lang="de" className={openEosFonts.className}>
       <body>
         <RuntimeConfigScript />
         <Providers>{children}</Providers>

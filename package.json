@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@openeos/pos-icons": "0.4.0",
+    "@openeos/ui": "0.3.2",
     "@tanstack/react-query": "^5.96.2",
     "@untitledui/icons": "^0.0.22",
     "next": "^16.2.2",
