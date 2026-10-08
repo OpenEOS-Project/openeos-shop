@@ -11,20 +11,20 @@
   "dependencies": {
     "@openeos/pos-icons": "0.4.0",
     "@openeos/ui": "0.3.3",
-    "@tanstack/react-query": "^5.96.2",
-    "@untitledui/icons": "^0.0.22",
-    "next": "^16.2.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "zustand": "^5.0.12"
+    "@tanstack/react-query": "^5.104.1",
+    "@untitledui/icons": "^0.0.23",
+    "next": "^16.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
     "@types/node": "^22.10.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "eslint": "^9.27.0",
-    "eslint-config-next": "^16.2.2",
+    "eslint-config-next": "^16.3.8",
     "typescript": "^5.6.0"
   }
 }
