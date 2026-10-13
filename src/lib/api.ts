@@ -86,6 +86,22 @@ export interface ShopMeta {
   testMode: boolean;
 }
 
+/**
+ * Impressum und Datenschutzhinweis des Vereins (er verkauft) sowie die
+ * Plattform-Links von OpenEOS. Je Angabe Link oder Text; fehlt beides,
+ * zeigt der Shop einen neutralen Hinweis.
+ */
+export interface ShopLegal {
+  organizationName: string;
+  imprintUrl: string | null;
+  imprintText: string | null;
+  privacyUrl: string | null;
+  privacyText: string | null;
+  contactEmail: string | null;
+  complete: boolean;
+  platform: { imprintUrl: string | null; privacyUrl: string | null };
+}
+
 export interface ShopCategory {
   id: string;
   name: string;
@@ -136,7 +152,9 @@ export interface ShopProduct {
 
 export const shopApi = {
   getShop: (eventId: string) =>
-    get<{ data: { event: ShopEvent; currency: string; shop: ShopMeta } }>(`/public/shop/${eventId}`),
+    get<{ data: { event: ShopEvent; currency: string; shop: ShopMeta; legal?: ShopLegal } }>(
+      `/public/shop/${eventId}`,
+    ),
 
   getCategories: (eventId: string) =>
     get<{ data: ShopCategory[] }>(`/public/shop/${eventId}/categories`),

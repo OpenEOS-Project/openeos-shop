@@ -1084,3 +1084,80 @@ button {
   color: var(--mute);
   text-wrap: pretty;
 }
+
+/* Rechtliche Angaben: oben der Verein (er verkauft), darunter dezent die
+   Plattform ("Bereitgestellt mit OpenEOS"). */
+.shop-legal {
+  margin-top: 8px;
+  padding: 18px clamp(16px, 4vw, 32px) 28px;
+  border-top: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--mute);
+}
+.shop-legal__club {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 14px;
+  color: var(--ink-2);
+}
+.shop-legal__club b { font-weight: 600; }
+.shop-legal a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+}
+.shop-legal a:hover { text-decoration-color: currentColor; }
+.shop-legal__missing { color: var(--mute); font-style: italic; }
+.shop-legal__platform {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12px;
+  color: var(--mute-2);
+}
+.shop-legal__platform .mono { font-size: 11px; }
+.shop-legal__form-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.shop-legal__form-hint a {
+  color: var(--green-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Textseite fuer Impressum/Datenschutz */
+.legal-page { padding-top: 24px; padding-bottom: 64px; max-width: 760px; }
+.legal-page__title {
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 12px 0 4px;
+}
+.legal-page__meta { color: var(--mute); font-size: 14px; margin: 0 0 24px; }
+.legal-text { font-size: 15px; line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; }
+.legal-text h2 { font-size: 20px; font-weight: 700; margin: 24px 0 8px; }
+.legal-text h3 { font-size: 17px; font-weight: 700; margin: 20px 0 6px; }
+.legal-text h4 { font-size: 15px; font-weight: 700; margin: 16px 0 4px; }
+.legal-text p { margin: 0 0 12px; }
+.legal-text a { color: var(--green-ink); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Unter 900px schwebt die Warenkorb-Leiste ueber dem Seitenende — die
+   Fusszeile braucht dann Platz, sonst verdeckt die Leiste die Links. */
+@media (max-width: 899px) {
+  .shop-legal--cart-bar { padding-bottom: 104px; }
+}
+.legal-page { min-height: calc(100vh - 200px); }

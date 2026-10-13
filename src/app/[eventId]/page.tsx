@@ -23,8 +23,7 @@ import {
   type CartItem,
 } from '@/stores/cart-store';
 import { ProductOptionsSheet } from './components/product-options-sheet';
-import { APP_VERSION } from '@/lib/version';
-import { SourceCodeLink } from '@/components/source-code-link';
+import { ShopLegalFooter } from '@/components/shop-legal';
 import { ProductImage } from '@/components/product-image';
 import { formatPrice } from '@/lib/format';
 import Link from 'next/link';
@@ -391,12 +390,8 @@ export default function ShopEventPage() {
         </div>
       </main>
 
-      <footer
-        className="mono"
-        style={{ textAlign: 'center', padding: '16px 0 24px', fontSize: 11, color: 'var(--mute-2)' }}
-      >
-        OpenEOS Shop v{APP_VERSION} · <SourceCodeLink />
-      </footer>
+      {/* Impressum und Datenschutz des Vereins, darunter die Plattform */}
+      <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} cartBar={count > 0 && isOpen} />
 
       {/* Floating cart bar — mobile only */}
       {count > 0 && isOpen && (
