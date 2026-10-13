@@ -10,6 +10,7 @@ import { shopApi, ShopApiError } from '@/lib/api';
 import { useCartStore, useCartHydration, cartTotal, lineUnitPrice, type CartItem } from '@/stores/cart-store';
 import { PaymentMethods } from '@/components/payment-methods';
 import { formatPrice } from '@/lib/format';
+import { CheckoutPrivacyHint, ShopLegalFooter } from '@/components/shop-legal';
 
 interface FriendlyError {
   title: string;
@@ -226,6 +227,9 @@ export default function CheckoutPage() {
                 autoComplete="email"
               />
             </label>
+            {/* Art. 13 DSGVO: direkt beim Erheben sagen, wer die Daten
+                verarbeitet und wo der Datenschutzhinweis steht. */}
+            <CheckoutPrivacyHint legal={shopQuery.data?.data.legal} eventId={eventId} />
           </section>
 
           <section
@@ -367,6 +371,7 @@ export default function CheckoutPage() {
         </aside>
       </div>
     </main>
+    <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
     </>
   );
 }
