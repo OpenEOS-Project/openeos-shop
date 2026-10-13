@@ -1154,3 +1154,10 @@ button {
 .legal-text h4 { font-size: 15px; font-weight: 700; margin: 16px 0 4px; }
 .legal-text p { margin: 0 0 12px; }
 .legal-text a { color: var(--green-ink); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Unter 900px schwebt die Warenkorb-Leiste ueber dem Seitenende — die
+   Fusszeile braucht dann Platz, sonst verdeckt die Leiste die Links. */
+@media (max-width: 899px) {
+  .shop-legal--cart-bar { padding-bottom: 104px; }
+}
+.legal-page { min-height: calc(100vh - 200px); }

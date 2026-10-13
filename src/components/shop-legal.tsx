@@ -38,12 +38,21 @@ function ClubLink({ target, children }: { target: { href: string; external: bool
  * Plattform-Links. Fehlen die Angaben des Vereins, steht dort ein neutraler
  * Hinweis statt einer leeren Stelle.
  */
-export function ShopLegalFooter({ legal, eventId }: { legal: ShopLegal | null | undefined; eventId: string }) {
+export function ShopLegalFooter({
+  legal,
+  eventId,
+  cartBar = false,
+}: {
+  legal: ShopLegal | null | undefined;
+  eventId: string;
+  /** Schwebt auf dem Handy die Warenkorb-Leiste darueber? */
+  cartBar?: boolean;
+}) {
   const imprint = clubLegalTarget(legal, 'imprint', eventId);
   const privacy = clubLegalTarget(legal, 'privacy', eventId);
   const organization = legal?.organizationName?.trim();
   return (
-    <footer className="shop-legal">
+    <footer className={cartBar ? 'shop-legal shop-legal--cart-bar' : 'shop-legal'}>
       {legal && (
         <div className="shop-legal__club">
           {organization && (

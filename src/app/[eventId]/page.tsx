@@ -391,7 +391,7 @@ export default function ShopEventPage() {
       </main>
 
       {/* Impressum und Datenschutz des Vereins, darunter die Plattform */}
-      <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
+      <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} cartBar={count > 0 && isOpen} />
 
       {/* Floating cart bar — mobile only */}
       {count > 0 && isOpen && (
