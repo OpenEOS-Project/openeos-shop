@@ -15,15 +15,27 @@ export const RUNTIME_CONFIG_GLOBAL = '__OPENEOS_SHOP_RUNTIME_CONFIG__';
 
 export interface RuntimeConfig {
   apiUrl: string;
+  /**
+   * Ziel des Links "Quellcode" (AGPL-3.0 § 13). Wer eine geaenderte Fassung
+   * betreibt, muss hier auf deren Quellcode zeigen.
+   */
+  sourceUrl: string;
 }
+
+/** Quellcode des unveraenderten OpenEOS (Shop, API, Verwaltung). */
+export const DEFAULT_SOURCE_URL = 'https://github.com/OpenEOS-Project';
 
 const BUILD_TIME_FALLBACK: RuntimeConfig = {
   apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010/api',
+  sourceUrl: process.env.NEXT_PUBLIC_SOURCE_URL || DEFAULT_SOURCE_URL,
 };
 
 /** Nur serverseitig aufrufen — im Browser sind diese Variablen leer. */
 export function readServerRuntimeConfig(): RuntimeConfig {
-  return { apiUrl: process.env.API_URL || BUILD_TIME_FALLBACK.apiUrl };
+  return {
+    apiUrl: process.env.API_URL || BUILD_TIME_FALLBACK.apiUrl,
+    sourceUrl: process.env.SOURCE_URL || BUILD_TIME_FALLBACK.sourceUrl,
+  };
 }
 
 function initialConfig(): RuntimeConfig {
@@ -31,8 +43,8 @@ function initialConfig(): RuntimeConfig {
 
   const injected = (window as unknown as Record<string, unknown>)[RUNTIME_CONFIG_GLOBAL];
   if (injected && typeof injected === 'object') {
-    const { apiUrl } = injected as Partial<RuntimeConfig>;
-    if (apiUrl) return { apiUrl };
+    const { apiUrl, sourceUrl } = injected as Partial<RuntimeConfig>;
+    if (apiUrl) return { apiUrl, sourceUrl: sourceUrl || BUILD_TIME_FALLBACK.sourceUrl };
   }
   return BUILD_TIME_FALLBACK;
 }
@@ -43,4 +55,9 @@ const current: RuntimeConfig = initialConfig();
 
 export function getApiBase(): string {
   return current.apiUrl.replace(/\/$/, '');
+}
+
+/** Ziel des Quellcode-Links (AGPL-3.0 § 13). */
+export function getSourceUrl(): string {
+  return current.sourceUrl.replace(/\/$/, '');
 }
