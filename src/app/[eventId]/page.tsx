@@ -24,6 +24,7 @@ import {
 } from '@/stores/cart-store';
 import { ProductOptionsSheet } from './components/product-options-sheet';
 import { APP_VERSION } from '@/lib/version';
+import { SourceCodeLink } from '@/components/source-code-link';
 import { ProductImage } from '@/components/product-image';
 import { formatPrice } from '@/lib/format';
 import Link from 'next/link';
@@ -394,7 +395,7 @@ export default function ShopEventPage() {
         className="mono"
         style={{ textAlign: 'center', padding: '16px 0 24px', fontSize: 11, color: 'var(--mute-2)' }}
       >
-        OpenEOS Shop v{APP_VERSION}
+        OpenEOS Shop v{APP_VERSION} · <SourceCodeLink />
       </footer>
 
       {/* Floating cart bar — mobile only */}
