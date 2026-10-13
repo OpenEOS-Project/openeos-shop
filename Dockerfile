@@ -42,6 +42,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# License texts travel with the image (AGPL-3.0-or-later)
+COPY --from=builder --chown=nextjs:nodejs /app/LICENSE /app/NOTICE ./
 
 USER nextjs
 

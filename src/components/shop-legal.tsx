@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import type { ShopLegal } from '@/lib/api';
 import { APP_VERSION } from '@/lib/version';
+import { SourceCodeLink } from '@/components/source-code-link';
 
 type LegalKind = 'imprint' | 'privacy';
 
@@ -99,6 +100,9 @@ export function ShopLegalFooter({
         )}
         <span aria-hidden="true">·</span>
         <span className="mono">Shop v{APP_VERSION}</span>
+        {/* AGPL-3.0 § 13: Quellcode-Link */}
+        <span aria-hidden="true">·</span>
+        <SourceCodeLink />
       </p>
     </footer>
   );
