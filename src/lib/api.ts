@@ -84,7 +84,17 @@ export interface ShopMeta {
   serviceFee: number;
   isOpenNow: boolean;
   testMode: boolean;
+  /**
+   * false in der Betriebsart „Nur Bons“: keine Online-Bestellungen, der
+   * Shop zeigt nur „Bestellungen nur vor Ort“. Fehlt bei älteren APIs —
+   * dann gilt true. Auswerten über `isOnlineOrderingAvailable`.
+   */
+  onlineOrderingAvailable?: boolean;
+  operatingMode?: OperatingMode;
 }
+
+/** Betriebsart der Organisation (Nur Bons / Bargeldlos / Alle Funktionen). */
+export type OperatingMode = 'orders_only' | 'cashless' | 'full';
 
 /**
  * Impressum und Datenschutzhinweis des Vereins (er verkauft) sowie die
@@ -150,11 +160,19 @@ export interface ShopProduct {
   stockUnit: string | null;
 }
 
+/** Antwort von `GET /public/shop/:eventId` (`data`). */
+export interface ShopInfo {
+  event: ShopEvent;
+  currency: string;
+  shop: ShopMeta;
+  legal?: ShopLegal;
+  /** Wie `shop.onlineOrderingAvailable` — falls die API es auf oberster Ebene liefert. */
+  onlineOrderingAvailable?: boolean;
+  operatingMode?: OperatingMode;
+}
+
 export const shopApi = {
-  getShop: (eventId: string) =>
-    get<{ data: { event: ShopEvent; currency: string; shop: ShopMeta; legal?: ShopLegal } }>(
-      `/public/shop/${eventId}`,
-    ),
+  getShop: (eventId: string) => get<{ data: ShopInfo }>(`/public/shop/${eventId}`),
 
   getCategories: (eventId: string) =>
     get<{ data: ShopCategory[] }>(`/public/shop/${eventId}/categories`),
