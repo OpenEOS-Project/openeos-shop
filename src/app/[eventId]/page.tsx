@@ -25,6 +25,8 @@ import {
 import { ProductOptionsSheet } from './components/product-options-sheet';
 import { ShopLegalFooter } from '@/components/shop-legal';
 import { ProductImage } from '@/components/product-image';
+import { OnSiteOnlyNotice } from '@/components/on-site-only-notice';
+import { isOnlineOrderingAvailable } from '@/lib/operating-mode';
 import { formatPrice } from '@/lib/format';
 import Link from 'next/link';
 
@@ -58,6 +60,7 @@ export default function ShopEventPage() {
   const decrement = useCartStore((s) => s.decrement);
   const remove = useCartStore((s) => s.remove);
   const setEventId = useCartStore((s) => s.setEventId);
+  const clearCart = useCartStore((s) => s.clear);
   const cartHydrated = useCartHydration();
 
   const [optionsForProduct, setOptionsForProduct] = useState<ShopProduct | null>(null);
@@ -123,16 +126,28 @@ export default function ShopEventPage() {
     retry: false,
   });
 
+  // Betriebsart „Nur Bons“: keine Speisekarte, keine Preise, kein Warenkorb.
+  const orderingAvailable = isOnlineOrderingAvailable(shopQuery.data?.data);
+
+  // Ein gespeicherter Warenkorb dieser Veranstaltung ist dann wertlos.
+  // Erst nach der Hydration leeren, sonst stellt persist ihn wieder her;
+  // setEventId (oben) hat den Warenkorb bereits dieser Veranstaltung zugeordnet.
+  useEffect(() => {
+    if (cartHydrated && !orderingAvailable) {
+      clearCart();
+    }
+  }, [cartHydrated, orderingAvailable, clearCart]);
+
   const categoriesQuery = useQuery({
     queryKey: ['shop-categories', eventId],
     queryFn: () => shopApi.getCategories(eventId),
-    enabled: shopQuery.isSuccess,
+    enabled: shopQuery.isSuccess && orderingAvailable,
   });
 
   const productsQuery = useQuery({
     queryKey: ['shop-products', eventId],
     queryFn: () => shopApi.getProducts(eventId),
-    enabled: shopQuery.isSuccess,
+    enabled: shopQuery.isSuccess && orderingAvailable,
   });
 
   const products = productsQuery.data?.data ?? [];
@@ -187,6 +202,32 @@ export default function ShopEventPage() {
           <h2>Shop nicht gefunden</h2>
           <p>Dieser Event-Shop ist nicht aktiviert oder die ID ist ungültig.</p>
         </div>
+      </>
+    );
+  }
+
+  if (!orderingAvailable) {
+    return (
+      <>
+        <div className="shop-logo-bar">
+          <Link href="/" aria-label="OpenEOS Shop">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo_dark.png" alt="OpenEOS" />
+          </Link>
+        </div>
+
+        <header className="shop-header">
+          <span className="shop-header__crumb">
+            <b>{event.organizationName}</b> · Online-Shop
+          </span>
+        </header>
+
+        <main className="shop-wrap">
+          <EventHero event={event} />
+          <OnSiteOnlyNotice organizationName={event.organizationName} />
+        </main>
+
+        <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
       </>
     );
   }
@@ -249,24 +290,7 @@ export default function ShopEventPage() {
           </div>
         )}
 
-        {/* Hero */}
-        <section className="shop-hero">
-          <div className="shop-hero__meta">
-            <b>{event.organizationName}</b>
-            {event.startDate && (
-              <>
-                <span style={{ opacity: 0.4 }}>·</span>
-                <span>{new Date(event.startDate).toLocaleDateString('de-DE')}</span>
-              </>
-            )}
-          </div>
-          <h1>{event.name}</h1>
-          {event.description && (
-            <p style={{ color: 'var(--mute)', fontSize: 16, marginTop: 14, maxWidth: 720 }}>
-              {event.description}
-            </p>
-          )}
-        </section>
+        <EventHero event={event} />
 
         {/* Closed-state */}
         {!isOpen && shopMeta && (
@@ -490,6 +514,29 @@ export default function ShopEventPage() {
         />
       )}
     </>
+  );
+}
+
+/** Verein, Datum, Name und Beschreibung der Veranstaltung. */
+function EventHero({ event }: { event: ShopEvent }) {
+  return (
+    <section className="shop-hero">
+      <div className="shop-hero__meta">
+        <b>{event.organizationName}</b>
+        {event.startDate && (
+          <>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span>{new Date(event.startDate).toLocaleDateString('de-DE')}</span>
+          </>
+        )}
+      </div>
+      <h1>{event.name}</h1>
+      {event.description && (
+        <p style={{ color: 'var(--mute)', fontSize: 16, marginTop: 14, maxWidth: 720 }}>
+          {event.description}
+        </p>
+      )}
+    </section>
   );
 }
 

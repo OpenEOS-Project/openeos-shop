@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, ArrowLeft } from '@untitledui/icons';
 import Link from 'next/link';
 
@@ -11,6 +11,8 @@ import { useCartStore, useCartHydration, cartTotal, lineUnitPrice, type CartItem
 import { PaymentMethods } from '@/components/payment-methods';
 import { formatPrice } from '@/lib/format';
 import { CheckoutPrivacyHint, ShopLegalFooter } from '@/components/shop-legal';
+import { OnSiteOnlyNotice } from '@/components/on-site-only-notice';
+import { isOnlineOrderingAvailable } from '@/lib/operating-mode';
 
 interface FriendlyError {
   title: string;
@@ -61,7 +63,10 @@ export default function CheckoutPage() {
   const eventId = params.eventId;
 
   const items = useCartStore((s) => s.items);
+  const cartEventId = useCartStore((s) => s.eventId);
+  const clearCart = useCartStore((s) => s.clear);
   const cartHydrated = useCartHydration();
+  const queryClient = useQueryClient();
 
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -70,6 +75,8 @@ export default function CheckoutPage() {
   const [tableNumber, setTableNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<FriendlyError | null>(null);
+  /** Die API hat mit ORDER_ONLY_MODE abgelehnt — Betriebsart wurde gerade umgestellt. */
+  const [orderOnlyRejected, setOrderOnlyRejected] = useState(false);
 
   const shopQuery = useQuery({
     queryKey: ['shop', eventId],
@@ -78,11 +85,22 @@ export default function CheckoutPage() {
     retry: false,
   });
 
+  // Betriebsart „Nur Bons“: hier kann nicht bestellt werden. Statt
+  // Formular steht derselbe Hinweis wie auf der Shop-Seite.
+  const onSiteOnly = orderOnlyRejected || !isOnlineOrderingAvailable(shopQuery.data?.data);
+
   useEffect(() => {
-    if (cartHydrated && items.length === 0) {
+    if (cartHydrated && items.length === 0 && !onSiteOnly) {
       router.replace(`/${eventId}`);
     }
-  }, [cartHydrated, items.length, eventId, router]);
+  }, [cartHydrated, items.length, eventId, router, onSiteOnly]);
+
+  // Den gespeicherten Warenkorb dieser Veranstaltung verwerfen.
+  useEffect(() => {
+    if (cartHydrated && onSiteOnly && cartEventId === eventId && items.length > 0) {
+      clearCart();
+    }
+  }, [cartHydrated, onSiteOnly, cartEventId, eventId, items.length, clearCart]);
 
   useEffect(() => {
     const isOpen = shopQuery.data?.data.shop.isOpenNow;
@@ -123,9 +141,40 @@ export default function CheckoutPage() {
       window.location.href = url;
     } catch (err) {
       setSubmitting(false);
+      if (err instanceof ShopApiError && err.code === 'ORDER_ONLY_MODE') {
+        setOrderOnlyRejected(true);
+        // Die Shop-Seite soll den neuen Stand gleich zeigen.
+        void queryClient.invalidateQueries({ queryKey: ['shop', eventId] });
+        return;
+      }
       setError(mapCheckoutError(err));
     }
   };
+
+  if (onSiteOnly) {
+    const organizationName =
+      shopQuery.data?.data.event.organizationName ?? shopQuery.data?.data.legal?.organizationName;
+    return (
+      <>
+        <div className="shop-logo-bar">
+          <a href={`/${eventId}`} aria-label="OpenEOS Shop">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo_dark.png" alt="OpenEOS" />
+          </a>
+        </div>
+        <main className="shop-wrap" style={{ paddingTop: 24, paddingBottom: 80 }}>
+          <Link href={`/${eventId}`} className="checkout-back">
+            <ArrowLeft style={{ width: 16, height: 16 }} />
+            Zurück zur Veranstaltung
+          </Link>
+          <div style={{ marginTop: 16 }}>
+            <OnSiteOnlyNotice organizationName={organizationName} />
+          </div>
+        </main>
+        <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
+      </>
+    );
+  }
 
   return (
     <>
