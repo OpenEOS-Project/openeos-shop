@@ -10,7 +10,13 @@ import { shopApi, ShopApiError } from '@/lib/api';
 import { useCartStore, useCartHydration, cartTotal, lineUnitPrice, type CartItem } from '@/stores/cart-store';
 import { PaymentMethods } from '@/components/payment-methods';
 import { formatPrice } from '@/lib/format';
-import { CheckoutPrivacyHint, ShopLegalFooter } from '@/components/shop-legal';
+import {
+  CheckoutPrivacyHint,
+  CheckoutSubmitLegalNote,
+  LegalMissingNotice,
+  ShopLegalFooter,
+  isLegalInfoMissing,
+} from '@/components/shop-legal';
 import { OnSiteOnlyNotice } from '@/components/on-site-only-notice';
 import { isOnlineOrderingAvailable } from '@/lib/operating-mode';
 
@@ -77,6 +83,8 @@ export default function CheckoutPage() {
   const [error, setError] = useState<FriendlyError | null>(null);
   /** Die API hat mit ORDER_ONLY_MODE abgelehnt — Betriebsart wurde gerade umgestellt. */
   const [orderOnlyRejected, setOrderOnlyRejected] = useState(false);
+  /** Die API hat mit LEGAL_INFO_MISSING abgelehnt — Angaben wurden gerade entfernt. */
+  const [legalRejected, setLegalRejected] = useState(false);
 
   const shopQuery = useQuery({
     queryKey: ['shop', eventId],
@@ -88,6 +96,8 @@ export default function CheckoutPage() {
   // Betriebsart „Nur Bons“: hier kann nicht bestellt werden. Statt
   // Formular steht derselbe Hinweis wie auf der Shop-Seite.
   const onSiteOnly = orderOnlyRejected || !isOnlineOrderingAvailable(shopQuery.data?.data);
+  // Ohne Impressum und Datenschutzhinweis des Vereins: Hinweis statt Kasse.
+  const legalMissing = legalRejected || isLegalInfoMissing(shopQuery.data?.data.legal);
 
   useEffect(() => {
     if (cartHydrated && items.length === 0 && !onSiteOnly) {
@@ -141,6 +151,11 @@ export default function CheckoutPage() {
       window.location.href = url;
     } catch (err) {
       setSubmitting(false);
+      if (err instanceof ShopApiError && err.code === 'LEGAL_INFO_MISSING') {
+        setLegalRejected(true);
+        void queryClient.invalidateQueries({ queryKey: ['shop', eventId] });
+        return;
+      }
       if (err instanceof ShopApiError && err.code === 'ORDER_ONLY_MODE') {
         setOrderOnlyRejected(true);
         // Die Shop-Seite soll den neuen Stand gleich zeigen.
@@ -151,7 +166,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (onSiteOnly) {
+  if (onSiteOnly || legalMissing) {
     const organizationName =
       shopQuery.data?.data.event.organizationName ?? shopQuery.data?.data.legal?.organizationName;
     return (
@@ -168,7 +183,11 @@ export default function CheckoutPage() {
             Zurück zur Veranstaltung
           </Link>
           <div style={{ marginTop: 16 }}>
-            <OnSiteOnlyNotice organizationName={organizationName} />
+            {onSiteOnly ? (
+              <OnSiteOnlyNotice organizationName={organizationName} />
+            ) : (
+              <LegalMissingNotice legal={shopQuery.data?.data.legal} />
+            )}
           </div>
         </main>
         <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
@@ -329,6 +348,8 @@ export default function CheckoutPage() {
           )}
 
           <PaymentMethods />
+
+          <CheckoutSubmitLegalNote legal={shopQuery.data?.data.legal} eventId={eventId} />
 
           <button type="submit" className="btn btn--primary" disabled={!canSubmit} style={{ padding: '14px 22px', fontSize: 15 }}>
             {submitting ? 'Wird verbunden …' : 'Jetzt bezahlen'}

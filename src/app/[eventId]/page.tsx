@@ -23,7 +23,7 @@ import {
   type CartItem,
 } from '@/stores/cart-store';
 import { ProductOptionsSheet } from './components/product-options-sheet';
-import { ShopLegalFooter } from '@/components/shop-legal';
+import { LegalMissingNotice, ShopLegalFooter, isLegalInfoMissing } from '@/components/shop-legal';
 import { ProductImage } from '@/components/product-image';
 import { OnSiteOnlyNotice } from '@/components/on-site-only-notice';
 import { isOnlineOrderingAvailable } from '@/lib/operating-mode';
@@ -156,8 +156,13 @@ export default function ShopEventPage() {
   const shopMeta = shopQuery.data?.data.shop;
   const isOpen = shopMeta?.isOpenNow ?? true;
   const isTest = shopMeta?.testMode ?? false;
+  const legal = shopQuery.data?.data.legal;
+  // Ohne Impressum und Datenschutzhinweis des Vereins keine Bestellung —
+  // Speisekarte bleibt sichtbar, Warenkorb und Kasse nicht.
+  const legalMissing = isLegalInfoMissing(legal);
+  const canOrder = isOpen && !legalMissing;
   const isLive =
-    shopQuery.data?.data.event.status === 'active' && !isTest && shopMeta?.isOpenNow === true;
+    shopQuery.data?.data.event.status === 'active' && !isTest && shopMeta?.isOpenNow === true && !legalMissing;
   const serviceFee = shopMeta?.serviceFee ?? 0;
   const event = shopQuery.data?.data.event;
 
@@ -292,6 +297,8 @@ export default function ShopEventPage() {
 
         <EventHero event={event} />
 
+        {legalMissing && <LegalMissingNotice legal={legal} />}
+
         {/* Closed-state */}
         {!isOpen && shopMeta && (
           <ClosedCard meta={shopMeta} event={event} />
@@ -341,7 +348,7 @@ export default function ShopEventPage() {
                             key={p.id}
                             product={p}
                             currency={currency}
-                            disabled={!isOpen}
+                            disabled={!canOrder}
                             onAdd={() => handleProductAdd(p)}
                           />
                         ))}
@@ -361,9 +368,13 @@ export default function ShopEventPage() {
                   <ShoppingCart01 style={{ width: 18, height: 18, color: 'var(--green-ink)' }} />
                   Warenkorb
                 </h2>
-                {count > 0 && <span className="shop-cart__count">{count}</span>}
+                {count > 0 && !legalMissing && <span className="shop-cart__count">{count}</span>}
               </div>
-              {items.length === 0 ? (
+              {legalMissing ? (
+                <p className="shop-cart__hint">
+                  Bestellen ist erst möglich, wenn der Veranstalter Impressum und Datenschutzhinweis hinterlegt hat.
+                </p>
+              ) : items.length === 0 ? (
                 <p className="shop-cart__empty">Dein Warenkorb ist leer</p>
               ) : (
                 <>
@@ -406,7 +417,7 @@ export default function ShopEventPage() {
                   </button>
                 </>
               )}
-              {!isOpen && (
+              {!isOpen && !legalMissing && (
                 <p className="shop-cart__hint">Bestellungen sind außerhalb der Öffnungszeiten nicht möglich.</p>
               )}
             </div>
@@ -415,10 +426,10 @@ export default function ShopEventPage() {
       </main>
 
       {/* Impressum und Datenschutz des Vereins, darunter die Plattform */}
-      <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} cartBar={count > 0 && isOpen} />
+      <ShopLegalFooter legal={legal} eventId={eventId} cartBar={count > 0 && canOrder} />
 
       {/* Floating cart bar — mobile only */}
-      {count > 0 && isOpen && (
+      {count > 0 && canOrder && (
         <button
           className="cart-bar shop-cart-bar--mobile"
           type="button"
