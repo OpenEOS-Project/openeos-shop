@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Loading02 } from '@untitledui/icons';
 
 import { shopApi } from '@/lib/api';
+import { ShopLegalFooter } from '@/components/shop-legal';
 import { useCartStore } from '@/stores/cart-store';
 
 const cardStyle: React.CSSProperties = {
@@ -42,6 +43,14 @@ export default function CheckoutReturnPage() {
       const status = q.state.data?.data.status;
       return status === 'pending' ? 2000 : false;
     },
+  });
+
+  // Fuer die Fusszeile (Impressum/Datenschutz des Vereins).
+  const shopQuery = useQuery({
+    queryKey: ['shop', eventId],
+    queryFn: () => shopApi.getShop(eventId),
+    enabled: !!eventId,
+    retry: false,
   });
 
   const status = verifyQuery.data?.data.status;
@@ -169,6 +178,7 @@ export default function CheckoutReturnPage() {
         </a>
       </div>
       {content}
+      <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
     </>
   );
 }

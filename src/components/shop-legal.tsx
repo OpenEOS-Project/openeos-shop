@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Icon } from '@openeos/ui';
 
 import type { ShopLegal } from '@/lib/api';
 import { APP_VERSION } from '@/lib/version';
@@ -126,6 +127,69 @@ export function CheckoutPrivacyHint({ legal, eventId }: { legal: ShopLegal | nul
         </>
       ) : (
         ' Einen Datenschutzhinweis hat der Veranstalter hier noch nicht hinterlegt.'
+      )}
+    </p>
+  );
+}
+
+/**
+ * Fehlen Impressum oder Datenschutzhinweis des Vereins, wird nicht bestellt
+ * (die API lehnt den Checkout dann mit LEGAL_INFO_MISSING ab). Aeltere APIs
+ * liefern `legal` nicht — dann bleibt alles wie bisher.
+ */
+export function isLegalInfoMissing(legal: ShopLegal | null | undefined): boolean {
+  return legal?.complete === false;
+}
+
+export const LEGAL_MISSING_TITLE = 'Dieser Shop ist noch nicht freigeschaltet';
+
+/** Welche Angaben fehlen — fuer den Hinweis statt Kasse. */
+export function legalMissingMessage(legal: ShopLegal | null | undefined): string {
+  const imprint = Boolean(legal?.imprintUrl || legal?.imprintText);
+  const privacy = Boolean(legal?.privacyUrl || legal?.privacyText);
+  const missing =
+    !imprint && privacy
+      ? 'Es fehlt noch das Impressum des Veranstalters.'
+      : imprint && !privacy
+        ? 'Es fehlt noch der Datenschutzhinweis des Veranstalters.'
+        : 'Es fehlen noch Impressum und Datenschutzhinweis des Veranstalters.';
+  return `${missing} Bis dahin kannst du hier nicht bestellen.`;
+}
+
+/** Neutraler Hinweis statt Bestell-/Kassen-Button, solange Angaben fehlen. */
+export function LegalMissingNotice({ legal }: { legal: ShopLegal | null | undefined }) {
+  return (
+    <div className="shop-banner shop-banner--closed" role="status">
+      <Icon name="info" width={22} height={22} style={{ flexShrink: 0, color: 'var(--mute)' }} />
+      <div style={{ minWidth: 0 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>{LEGAL_MISSING_TITLE}</h2>
+        <p style={{ fontSize: 13, color: 'var(--mute)', margin: '4px 0 0' }}>{legalMissingMessage(legal)}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Kurzer Hinweis direkt ueber "Jetzt bezahlen": bei wem bestellt wird und
+ * wo der Datenschutzhinweis steht.
+ */
+export function CheckoutSubmitLegalNote({ legal, eventId }: { legal: ShopLegal | null | undefined; eventId: string }) {
+  const organization = legal?.organizationName?.trim();
+  const privacy = clubLegalTarget(legal, 'privacy', eventId);
+  if (!organization && !privacy) return null;
+  return (
+    <p className="shop-legal__form-hint" style={{ margin: 0, textAlign: 'center' }}>
+      {organization && (
+        <>
+          Du bestellst bei <b>{organization}</b>
+          {/* "e. V." endet schon mit Punkt */}
+          {organization.endsWith('.') ? ' ' : '. '}
+        </>
+      )}
+      {privacy && (
+        <>
+          Wie deine Daten verarbeitet werden, steht im <ClubLink target={privacy}>Datenschutzhinweis</ClubLink>.
+        </>
       )}
     </p>
   );
