@@ -1,5 +1,8 @@
 import { headers } from 'next/headers';
 
+import { PlatformLegalFooter } from '@/components/shop-legal';
+import { fetchPlatformLegal } from '@/lib/platform-legal';
+
 /** Erlaubt nur einen nackten Hostnamen (optional mit Port) — der Wert kommt aus
     einem Request-Header und wird nur angezeigt, aber Unsinn soll nicht durch. */
 const HOST_PATTERN = /^[a-z0-9.-]+(:\d{1,5})?$/i;
@@ -26,59 +29,63 @@ async function resolveShopBaseUrl(): Promise<string | null> {
 }
 
 export default async function HomePage() {
-  const baseUrl = await resolveShopBaseUrl();
+  const [baseUrl, platform] = await Promise.all([resolveShopBaseUrl(), fetchPlatformLegal()]);
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 var(--pad)' }}>
-      <div style={{ maxWidth: 640, textAlign: 'center' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo_dark.png"
-          alt="OpenEOS"
-          style={{ height: 44, width: 'auto', margin: '0 auto 24px', display: 'block' }}
-        />
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 12px',
-            borderRadius: 99,
-            background: 'color-mix(in oklab, var(--green-soft) 60%, var(--paper))',
-            border: '1px solid color-mix(in oklab, var(--green-ink) 22%, transparent)',
-            color: 'var(--green-ink)',
-            fontFamily: 'var(--f-mono)',
-            fontSize: 12,
-            marginBottom: 16,
-          }}
-        >
-          OPENEOS · SHOP
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px var(--pad)' }}>
+        <div style={{ maxWidth: 640, textAlign: 'center' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo_dark.png"
+            alt="OpenEOS"
+            style={{ height: 44, width: 'auto', margin: '0 auto 24px', display: 'block' }}
+          />
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 12px',
+              borderRadius: 99,
+              background: 'color-mix(in oklab, var(--green-soft) 60%, var(--paper))',
+              border: '1px solid color-mix(in oklab, var(--green-ink) 22%, transparent)',
+              color: 'var(--green-ink)',
+              fontFamily: 'var(--f-mono)',
+              fontSize: 12,
+              marginBottom: 16,
+            }}
+          >
+            OPENEOS · SHOP
+          </div>
+          <h1
+            style={{
+              fontSize: 'clamp(40px, 6vw, 80px)',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              lineHeight: 0.95,
+              margin: 0,
+            }}
+          >
+            Öffne den Link deines Events
+          </h1>
+          <p style={{ fontSize: 16, color: 'var(--mute)', marginTop: 18 }}>
+            Jeder Event-Shop hat eine eigene Adresse. Den Link dazu bekommst du vom Veranstalter —
+            zum Beispiel als QR-Code vor Ort, auf einem Flyer oder per Nachricht.
+          </p>
+          <p style={{ fontSize: 14, color: 'var(--mute)', marginTop: 12 }}>
+            Er sieht so aus:
+            {/* Umbruch hoechstens vor "/<event-id>", nie mitten in Host oder Platzhalter. */}
+            <span className="mono" style={{ display: 'block', color: 'var(--ink)', marginTop: 4 }}>
+              <span style={{ whiteSpace: 'nowrap' }}>{baseUrl ?? '…'}</span>
+              <wbr />
+              <span style={{ whiteSpace: 'nowrap' }}>/&lt;event-id&gt;</span>
+            </span>
+          </p>
         </div>
-        <h1
-          style={{
-            fontSize: 'clamp(40px, 6vw, 80px)',
-            fontWeight: 800,
-            letterSpacing: '-0.03em',
-            lineHeight: 0.95,
-            margin: 0,
-          }}
-        >
-          Öffne den Link deines Events
-        </h1>
-        <p style={{ fontSize: 16, color: 'var(--mute)', marginTop: 18 }}>
-          Jeder Event-Shop hat eine eigene Adresse. Den Link dazu bekommst du vom Veranstalter —
-          zum Beispiel als QR-Code vor Ort, auf einem Flyer oder per Nachricht.
-        </p>
-        <p style={{ fontSize: 14, color: 'var(--mute)', marginTop: 12 }}>
-          Er sieht so aus:
-          {/* Umbruch hoechstens vor "/<event-id>", nie mitten in Host oder Platzhalter. */}
-          <span className="mono" style={{ display: 'block', color: 'var(--ink)', marginTop: 4 }}>
-            <span style={{ whiteSpace: 'nowrap' }}>{baseUrl ?? '…'}</span>
-            <wbr />
-            <span style={{ whiteSpace: 'nowrap' }}>/&lt;event-id&gt;</span>
-          </span>
-        </p>
-      </div>
+      </main>
+      {/* Impressum und Datenschutz von OpenEOS — auch ohne Event-Link. */}
+      <PlatformLegalFooter platform={platform} />
     </div>
   );
 }
