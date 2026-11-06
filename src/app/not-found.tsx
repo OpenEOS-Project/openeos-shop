@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { connection } from 'next/server';
+
+import { PlatformLegalFooter } from '@/components/shop-legal';
+import { fetchPlatformLegal } from '@/lib/platform-legal';
 
 export const metadata: Metadata = {
   title: 'Shop nicht gefunden · OpenEOS Shop',
@@ -7,7 +11,11 @@ export const metadata: Metadata = {
 };
 
 /** 404 im Shop-Design — für unbekannte Event-IDs und fehlende Dateien. */
-export default function NotFound() {
+export default async function NotFound() {
+  // Zur Anfragezeit rendern: beim Bauen ist die API nicht erreichbar, die
+  // Plattform-Links fehlten sonst in der statischen 404-Seite.
+  await connection();
+  const platform = await fetchPlatformLegal();
   return (
     <div className="not-found">
       <div className="shop-logo-bar">
@@ -27,6 +35,7 @@ export default function NotFound() {
           Zur Startseite
         </Link>
       </main>
+      <PlatformLegalFooter platform={platform} />
     </div>
   );
 }

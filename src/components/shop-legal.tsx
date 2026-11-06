@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Icon } from '@openeos/ui';
 
 import type { ShopLegal } from '@/lib/api';
+import type { PlatformLegalLinks } from '@/lib/platform-legal';
 import { APP_VERSION } from '@/lib/version';
 import { SourceCodeLink } from '@/components/source-code-link';
 
@@ -76,35 +77,7 @@ export function ShopLegalFooter({
           )}
         </div>
       )}
-      <p className="shop-legal__platform">
-        <span>Bereitgestellt mit OpenEOS</span>
-        {legal?.platform.imprintUrl && (
-          <>
-            <span aria-hidden="true">·</span>
-            <a href={legal.platform.imprintUrl} target="_blank" rel="noopener noreferrer" aria-label="Impressum von OpenEOS">
-              Impressum
-            </a>
-          </>
-        )}
-        {legal?.platform.privacyUrl && (
-          <>
-            <span aria-hidden="true">·</span>
-            <a
-              href={legal.platform.privacyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Datenschutzerklärung von OpenEOS"
-            >
-              Datenschutz
-            </a>
-          </>
-        )}
-        <span aria-hidden="true">·</span>
-        <span className="mono">Shop v{APP_VERSION}</span>
-        {/* AGPL-3.0 § 13: Quellcode-Link */}
-        <span aria-hidden="true">·</span>
-        <SourceCodeLink />
-      </p>
+      <PlatformLegalLine platform={legal?.platform} />
     </footer>
   );
 }
@@ -192,5 +165,54 @@ export function CheckoutSubmitLegalNote({ legal, eventId }: { legal: ShopLegal |
         </>
       )}
     </p>
+  );
+}
+
+/**
+ * „Bereitgestellt mit OpenEOS“ mit Impressum und Datenschutz der Plattform,
+ * Version und Quellcode-Link (AGPL-3.0 § 13).
+ */
+export function PlatformLegalLine({ platform }: { platform: PlatformLegalLinks | null | undefined }) {
+  return (
+    <p className="shop-legal__platform">
+      <span>Bereitgestellt mit OpenEOS</span>
+      {platform?.imprintUrl && (
+        <>
+          <span aria-hidden="true">·</span>
+          <a href={platform.imprintUrl} target="_blank" rel="noopener noreferrer" aria-label="Impressum von OpenEOS">
+            Impressum
+          </a>
+        </>
+      )}
+      {platform?.privacyUrl && (
+        <>
+          <span aria-hidden="true">·</span>
+          <a
+            href={platform.privacyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Datenschutzerklärung von OpenEOS"
+          >
+            Datenschutz
+          </a>
+        </>
+      )}
+      <span aria-hidden="true">·</span>
+      <span className="mono">Shop v{APP_VERSION}</span>
+      {/* AGPL-3.0 § 13: Quellcode-Link */}
+      <span aria-hidden="true">·</span>
+      <SourceCodeLink />
+    </p>
+  );
+}
+
+/**
+ * Fusszeile fuer Seiten ohne Verein (Startseite, 404): nur die Plattform.
+ */
+export function PlatformLegalFooter({ platform }: { platform: PlatformLegalLinks | null | undefined }) {
+  return (
+    <footer className="shop-legal">
+      <PlatformLegalLine platform={platform} />
+    </footer>
   );
 }
