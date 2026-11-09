@@ -186,6 +186,20 @@ button {
     margin-top: 12px;
   }
 }
+/* Vorverkauf: echte Bestellungen vor der Veranstaltung */
+.shop-banner--presale {
+  background: color-mix(in oklab, var(--green-soft) 70%, var(--paper));
+  border-color: color-mix(in oklab, var(--green-ink) 30%, transparent);
+  color: var(--green-ink);
+  font-size: 13px;
+  align-items: center;
+  margin-top: 16px;
+}
+@media (max-width: 600px) {
+  .shop-banner--presale {
+    margin-top: 12px;
+  }
+}
 .shop-banner--closed {
   background: var(--paper-2);
   padding: 24px;

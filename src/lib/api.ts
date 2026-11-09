@@ -58,6 +58,15 @@ export interface ShopEvent {
   startDate: string | null;
   endDate: string | null;
   organizationName: string;
+  /**
+   * Phase der Veranstaltung (API seit 2026-11): `planned` = vor dem
+   * Verkaufsfenster (Bestellungen nur mit Vorverkauf), `ended` = vorbei.
+   * Fehlt bei älteren APIs.
+   */
+  phase?: 'inactive' | 'test' | 'planned' | 'active' | 'ended';
+  /** Beginn der echten Verkäufe (ISO). */
+  realSalesFrom?: string | null;
+  realSalesUntil?: string | null;
 }
 
 export type ShopWeekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
@@ -84,6 +93,19 @@ export interface ShopMeta {
   serviceFee: number;
   isOpenNow: boolean;
   testMode: boolean;
+  /**
+   * Zustand des Shops (API seit 2026-11): `presale` = Vorverkauf läuft,
+   * `not_started` = Verkauf beginnt erst mit der Veranstaltung, `ended` =
+   * Veranstaltung beendet. Fehlt bei älteren APIs.
+   */
+  state?: 'test' | 'presale' | 'open' | 'closed' | 'not_started' | 'ended';
+  presale?: {
+    enabled: boolean;
+    active: boolean;
+    /** Vorverkauf bis (Beginn des Verkaufsfensters, ISO). */
+    until: string | null;
+    windows: ShopWindow[] | null;
+  };
   /**
    * false in der Betriebsart „Nur Bons“: keine Online-Bestellungen, der
    * Shop zeigt nur „Bestellungen nur vor Ort“. Fehlt bei älteren APIs —

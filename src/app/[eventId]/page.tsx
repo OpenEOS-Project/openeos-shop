@@ -161,8 +161,13 @@ export default function ShopEventPage() {
   // Speisekarte bleibt sichtbar, Warenkorb und Kasse nicht.
   const legalMissing = isLegalInfoMissing(legal);
   const canOrder = isOpen && !legalMissing;
+  const isPresale = shopMeta?.state === 'presale';
   const isLive =
-    shopQuery.data?.data.event.status === 'active' && !isTest && shopMeta?.isOpenNow === true && !legalMissing;
+    shopQuery.data?.data.event.status === 'active' &&
+    !isTest &&
+    !isPresale &&
+    shopMeta?.isOpenNow === true &&
+    !legalMissing;
   const serviceFee = shopMeta?.serviceFee ?? 0;
   const event = shopQuery.data?.data.event;
 
@@ -279,6 +284,8 @@ export default function ShopEventPage() {
             Testmodus meldet die API isOpenNow immer true — dort steht TEST. */}
         {isTest ? (
           <span className="mono" style={{ color: 'var(--mute-2)' }}>TEST</span>
+        ) : isPresale && !legalMissing ? (
+          <span className="mono shop-header__live">VORVERKAUF</span>
         ) : isLive ? (
           <span className="mono shop-header__live">LIVE</span>
         ) : null}
@@ -291,6 +298,18 @@ export default function ShopEventPage() {
             <AlertTriangle style={{ width: 18, height: 18, flexShrink: 0 }} />
             <span>
               <b>Test-Modus.</b> Bestellungen sind möglich, werden aber als Test-Bestellungen markiert.
+            </span>
+          </div>
+        )}
+
+        {/* Vorverkauf: echte Bestellungen schon vor der Veranstaltung. */}
+        {isPresale && shopMeta?.presale?.until && (
+          <div className="shop-banner shop-banner--presale">
+            <Clock style={{ width: 18, height: 18, flexShrink: 0 }} />
+            <span>
+              <b>Vorverkauf.</b> Du kannst schon jetzt bestellen – bis{' '}
+              {WINDOW_DAY.format(new Date(shopMeta.presale.until))} um{' '}
+              {WINDOW_TIME.format(new Date(shopMeta.presale.until))} Uhr.
             </span>
           </div>
         )}
@@ -648,7 +667,17 @@ function ClosedCard({ meta, event }: { meta: ShopMeta; event: ShopEvent }) {
   let title = 'Shop ist gerade geschlossen';
   let message: string;
 
-  if (meta.windows.length === 0) {
+  if (meta.state === 'ended') {
+    // Phase „Beendet“ (API): auch ein später eingetragenes Fenster zählt nicht mehr.
+    title = 'Veranstaltung ist beendet';
+    message = 'Es können keine Bestellungen mehr aufgegeben werden.';
+  } else if (event.phase === 'planned' && meta.presale?.enabled && meta.nextOpening) {
+    // Vorverkauf außerhalb seiner Zeiten (Wochentags-Tabelle) — die nächste
+    // Öffnung nennt die API.
+    const opensAt = new Date(meta.nextOpening);
+    title = 'Shop ist gerade geschlossen';
+    message = `Bestellungen sind ab ${WINDOW_DAY.format(opensAt)} um ${WINDOW_TIME.format(opensAt)} möglich.`;
+  } else if (meta.windows.length === 0) {
     // Ohne Fenster gibt es keinen Zeitraum, auf den man vertrösten könnte.
     title = 'Shop ist nicht verfügbar';
     message = 'Für diese Veranstaltung sind keine Öffnungszeiten hinterlegt.';
