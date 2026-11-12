@@ -131,7 +131,14 @@ export interface ShopLegal {
   privacyText: string | null;
   contactEmail: string | null;
   complete: boolean;
-  platform: { imprintUrl: string | null; privacyUrl: string | null };
+  platform: {
+    imprintUrl: string | null;
+    privacyUrl: string | null;
+    /** Kontaktstelle nach Art. 11/12 DSA (API seit 2026-11). */
+    contactEmail?: string | null;
+    /** Formular „Inhalt melden“ (Art. 16 DSA); null = kein Link. */
+    reportUrl?: string | null;
+  };
 }
 
 export interface ShopCategory {
