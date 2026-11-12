@@ -5,6 +5,7 @@ import type { ShopLegal } from '@/lib/api';
 import type { PlatformLegalLinks } from '@/lib/platform-legal';
 import { APP_VERSION } from '@/lib/version';
 import { SourceCodeLink } from '@/components/source-code-link';
+import { ReportContentLink } from '@/components/report-content-link';
 
 type LegalKind = 'imprint' | 'privacy';
 
@@ -84,7 +85,7 @@ export function ShopLegalFooter({
           )}
         </div>
       )}
-      <PlatformLegalLine platform={legal?.platform} />
+      <PlatformLegalLine platform={legal?.platform} reportable />
     </footer>
   );
 }
@@ -179,7 +180,14 @@ export function CheckoutSubmitLegalNote({ legal, eventId }: { legal: ShopLegal |
  * „Bereitgestellt mit OpenEOS“ mit Impressum und Datenschutz der Plattform,
  * Version und Quellcode-Link (AGPL-3.0 § 13).
  */
-export function PlatformLegalLine({ platform }: { platform: PlatformLegalLinks | null | undefined }) {
+export function PlatformLegalLine({
+  platform,
+  reportable = false,
+}: {
+  platform: (PlatformLegalLinks & { reportUrl?: string | null }) | null | undefined;
+  /** Seite mit Inhalten eines Vereins (Shop)? Dann „Inhalt melden“ (Art. 16 DSA). */
+  reportable?: boolean;
+}) {
   return (
     <p className="shop-legal__platform">
       <span>Bereitgestellt mit OpenEOS</span>
@@ -202,6 +210,12 @@ export function PlatformLegalLine({ platform }: { platform: PlatformLegalLinks |
           >
             Datenschutz
           </a>
+        </>
+      )}
+      {reportable && platform?.reportUrl && (
+        <>
+          <span aria-hidden="true">·</span>
+          <ReportContentLink reportUrl={platform.reportUrl} />
         </>
       )}
       <span aria-hidden="true">·</span>

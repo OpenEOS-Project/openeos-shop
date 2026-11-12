@@ -136,7 +136,14 @@ export interface ShopLegal {
    * Widerrufsfunktion „Vertrag widerrufen“ (§ 356a BGB). API seit 2026-11.
    */
   withdrawalRight?: boolean;
-  platform: { imprintUrl: string | null; privacyUrl: string | null };
+  platform: {
+    imprintUrl: string | null;
+    privacyUrl: string | null;
+    /** Kontaktstelle nach Art. 11/12 DSA (API seit 2026-11). */
+    contactEmail?: string | null;
+    /** Formular „Inhalt melden“ (Art. 16 DSA); null = kein Link. */
+    reportUrl?: string | null;
+  };
 }
 
 /** `GET /public/shop/:eventId/withdrawal` (`data`). */
