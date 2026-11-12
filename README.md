@@ -1,13 +1,13 @@
 # OpenEOS Shop
 
-Öffentlicher Online-Shop für einzelne OpenEOS-Veranstaltungen (`/[eventId]`). Gäste durchstöbern das Produktangebot einer Veranstaltung, legen Artikel in den Warenkorb und schließen den Kauf über die Checkout-Seite (inkl. PayPal-Rückkehr-Flow unter `/[eventId]/checkout/return`) ab.
+Öffentlicher Online-Shop für einzelne OpenEOS-Veranstaltungen (`/[eventId]`). Gäste durchstöbern das Produktangebot einer Veranstaltung, legen Artikel in den Warenkorb und schließen den Kauf über die Checkout-Seite (Bezahlung über SumUp Online, Rückkehrseite unter `/[eventId]/checkout/return`) ab.
 
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router, Turbopack)
 - **UI:** React 19 + Untitled UI Icons
 - **State Management:** TanStack Query + Zustand
-- **Zahlung:** PayPal
+- **Zahlung:** SumUp Online (Karte, Google Pay, Apple Pay) über die OpenEOS-API
 - **Icons:** `@openeos/pos-icons`
 
 ## Setup
