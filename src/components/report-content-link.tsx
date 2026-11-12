@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 /** Formular-Adresse mit der aktuellen Seite als Fundstelle. */
 export function reportContentHref(reportUrl: string, page: string | null): string {
   if (!page) return reportUrl;
@@ -11,22 +9,24 @@ export function reportContentHref(reportUrl: string, page: string | null): strin
 
 /**
  * „Inhalt melden“ (Melde- und Abhilfeverfahren, Art. 16 DSA). Das
- * Formular liegt in der Verwaltung (`platform.reportUrl` aus der API); die
- * Fundstelle kommt erst im Browser dazu, damit Server- und Browser-HTML
- * gleich bleiben.
+ * Formular liegt in der Verwaltung (`platform.reportUrl` aus der API). Die
+ * Fundstelle (aktuelle Seite) kommt erst beim Anklicken dazu — so bleiben
+ * Server- und Browser-HTML gleich.
  */
 export function ReportContentLink({ reportUrl }: { reportUrl: string | null | undefined }) {
-  const [page, setPage] = useState<string | null>(null);
-  useEffect(() => {
-    setPage(window.location.href);
-  }, []);
   if (!reportUrl || !/^https?:\/\//i.test(reportUrl)) return null;
+  const withPage = (event: { currentTarget: HTMLAnchorElement }) => {
+    event.currentTarget.href = reportContentHref(reportUrl, window.location.href);
+  };
   return (
     <a
-      href={reportContentHref(reportUrl, page)}
+      href={reportUrl}
       target="_blank"
       rel="noopener noreferrer"
       data-testid="report-content-link"
+      onPointerDown={withPage}
+      onFocus={withPage}
+      onClick={withPage}
       style={{ color: 'inherit' }}
     >
       Inhalt melden
