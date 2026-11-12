@@ -131,7 +131,25 @@ export interface ShopLegal {
   privacyText: string | null;
   contactEmail: string | null;
   complete: boolean;
+  /**
+   * Besteht für Bestellungen ein Widerrufsrecht? Dann zeigt der Shop die
+   * Widerrufsfunktion „Vertrag widerrufen“ (§ 356a BGB). API seit 2026-11.
+   */
+  withdrawalRight?: boolean;
   platform: { imprintUrl: string | null; privacyUrl: string | null };
+}
+
+/** `GET /public/shop/:eventId/withdrawal` (`data`). */
+export interface WithdrawalInfo {
+  event: { id: string; name: string };
+  organizationName: string;
+  legal: ShopLegal;
+}
+
+/** Eingangsbestätigung eines Widerrufs. */
+export interface WithdrawalReceipt {
+  receivedAt: string;
+  reference: string;
 }
 
 export interface ShopCategory {
@@ -221,6 +239,14 @@ export const shopApi = {
       `/public/shop/${eventId}/checkout`,
       body,
     ),
+
+  /** Widerrufsfunktion (§ 356a BGB) — auch nach dem Ende der Veranstaltung. */
+  getWithdrawal: (eventId: string) => get<{ data: WithdrawalInfo }>(`/public/shop/${eventId}/withdrawal`),
+
+  submitWithdrawal: (
+    eventId: string,
+    body: { name: string; email: string; orderNumber: string; message?: string; website?: string; startedAt?: number },
+  ) => post<{ data: WithdrawalReceipt }>(`/public/shop/${eventId}/withdrawal`, body),
 
   verifyCheckout: (checkoutId: string) =>
     get<{ data: { status: 'pending' | 'paid' | 'failed' | 'cancelled'; orderNumber?: string } }>(

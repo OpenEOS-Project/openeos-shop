@@ -66,6 +66,13 @@ export function ShopLegalFooter({
           {imprint && <ClubLink target={imprint}>Impressum</ClubLink>}
           {privacy && <ClubLink target={privacy}>Datenschutz</ClubLink>}
           {legal.contactEmail && <a href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>}
+          {/* § 356a BGB: Widerrufsfunktion gut sichtbar und ständig erreichbar,
+              wenn der Verein ein Widerrufsrecht angegeben hat. */}
+          {legal.withdrawalRight && (
+            <Link href={`/widerruf/${eventId}`} className="shop-legal__withdrawal" data-testid="withdrawal-link">
+              Vertrag widerrufen
+            </Link>
+          )}
           {(!imprint || !privacy) && (
             <span className="shop-legal__missing">
               {!imprint && !privacy
