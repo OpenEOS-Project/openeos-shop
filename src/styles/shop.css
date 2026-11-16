@@ -1175,3 +1175,68 @@ button {
   .shop-legal--cart-bar { padding-bottom: 104px; }
 }
 .legal-page { min-height: calc(100vh - 200px); }
+
+/* Widerrufsfunktion (§ 356a BGB), app/widerruf/[eventId] */
+.withdrawal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 520px;
+}
+.withdrawal__form textarea {
+  width: 100%;
+  padding: 11px 13px;
+  background: var(--paper);
+  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border-radius: var(--r-sm);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+.withdrawal__form .btn {
+  align-self: flex-start;
+}
+.withdrawal__trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.withdrawal__error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--red) 12%, transparent);
+  color: var(--red);
+  font-size: 13px;
+}
+.withdrawal__done {
+  max-width: 560px;
+}
+.withdrawal__done > svg {
+  width: 40px;
+  height: 40px;
+  color: var(--green-ink, var(--green));
+}
+.withdrawal__done h2 {
+  margin: 8px 0;
+  font-size: 20px;
+}
+.withdrawal__summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 16px 0 0;
+  font-size: 14px;
+}
+.withdrawal__summary dt {
+  color: var(--mute);
+}
+.withdrawal__summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.shop-legal__withdrawal {
+  font-weight: 700;
+}
