@@ -1,13 +1,13 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import Link from 'next/link';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle } from '@untitledui/icons';
 
 import { ShopApiError, shopApi, type WithdrawalReceipt } from '@/lib/api';
 import { ShopLegalFooter } from '@/components/shop-legal';
+import { ShopHeader } from '@/components/shop-header';
 
 const RECEIVED = new Intl.DateTimeFormat('de-DE', {
   dateStyle: 'long',
@@ -35,6 +35,16 @@ function WithdrawalForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<WithdrawalReceipt | null>(null);
+  const [attempted, setAttempted] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const orderRef = useRef<HTMLInputElement>(null);
+  const doneRef = useRef<HTMLHeadingElement>(null);
+
+  // Nach dem Absenden verschwindet das Formular: Fokus auf die Bestätigung.
+  useEffect(() => {
+    if (receipt) doneRef.current?.focus();
+  }, [receipt]);
 
   const info = useQuery({
     queryKey: ['withdrawal', eventId],
@@ -45,13 +55,24 @@ function WithdrawalForm() {
   const data = info.data?.data;
   const notAvailable = info.error instanceof ShopApiError && info.error.status === 404;
 
-  const valid =
-    name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && orderNumber.trim().length > 0;
+  const fieldErrors = {
+    name: name.trim().length < 2 ? 'Bitte gib deinen Namen ein (mindestens 2 Zeichen).' : null,
+    email: !email.trim()
+      ? 'Bitte gib deine E-Mail-Adresse ein.'
+      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+        ? 'Bitte gib eine gültige E-Mail-Adresse ein, z. B. name@beispiel.de.'
+        : null,
+    orderNumber: !orderNumber.trim() ? 'Bitte gib die Bestellnummer aus deiner Bestellbestätigung ein.' : null,
+  };
+  const valid = !fieldErrors.name && !fieldErrors.email && !fieldErrors.orderNumber;
+  const showError = (key: keyof typeof fieldErrors) => (attempted ? fieldErrors[key] : null);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!valid) {
-      setError('Bitte gib deinen Namen, deine E-Mail-Adresse und die Bestellnummer an.');
+      setAttempted(true);
+      setError(null);
+      (fieldErrors.name ? nameRef : fieldErrors.email ? emailRef : orderRef).current?.focus();
       return;
     }
     setPending(true);
@@ -78,13 +99,8 @@ function WithdrawalForm() {
 
   return (
     <>
-      <div className="shop-logo-bar">
-        <Link href={`/${eventId}`} aria-label="Zum Shop">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_dark.png" alt="OpenEOS" />
-        </Link>
-      </div>
-      <main className="shop-wrap legal-page withdrawal">
+      <ShopHeader href={`/${eventId}`} label="Zum Shop" />
+      <main id="main" tabIndex={-1} className="shop-wrap legal-page withdrawal">
         <h1 className="legal-page__title">Vertrag widerrufen</h1>
         {data && (
           <p className="legal-page__meta">
@@ -93,7 +109,7 @@ function WithdrawalForm() {
         )}
 
         {info.isLoading ? (
-          <p className="legal-page__meta">…</p>
+          <p className="legal-page__meta" role="status">Wird geladen …</p>
         ) : notAvailable ? (
           <p>Für Bestellungen in diesem Shop ist keine Widerrufsfunktion eingerichtet.</p>
         ) : info.isError || !data ? (
@@ -101,7 +117,9 @@ function WithdrawalForm() {
         ) : receipt ? (
           <div className="withdrawal__done" role="status" data-testid="withdrawal-confirmed">
             <CheckCircle aria-hidden="true" />
-            <h2>Dein Widerruf ist eingegangen</h2>
+            <h2 ref={doneRef} tabIndex={-1}>
+              Dein Widerruf ist eingegangen
+            </h2>
             <p>
               Eingegangen am <b>{RECEIVED.format(new Date(receipt.receivedAt))} Uhr</b>. Wir haben ihn an{' '}
               {data.organizationName} weitergeleitet und dir eine Eingangsbestätigung mit dem Inhalt deines
@@ -129,41 +147,88 @@ function WithdrawalForm() {
               Namen, die Bestellnummer aus deiner Bestellbestätigung und deine E-Mail-Adresse an – dorthin schicken
               wir dir sofort eine Eingangsbestätigung.
             </p>
-            <label className="field">
-              <span>
-                Name <span style={{ color: 'var(--red)' }}>*</span>
-              </span>
-              <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={200} required />
-            </label>
-            <label className="field">
-              <span>
-                E-Mail-Adresse <span style={{ color: 'var(--red)' }}>*</span>
-              </span>
+            <p className="field__hint">
+              Pflichtfelder sind mit <span aria-hidden="true">*</span> markiert.
+            </p>
+            <div className="field">
+              <label htmlFor="withdrawal-name">
+                <span>
+                  Name <span className="field__req" aria-hidden="true">*</span>
+                </span>
+              </label>
               <input
+                id="withdrawal-name"
+                ref={nameRef}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                maxLength={200}
+                required
+                aria-invalid={showError('name') ? true : undefined}
+                aria-describedby={showError('name') ? 'withdrawal-name-error' : undefined}
+              />
+              {showError('name') && <FieldError id="withdrawal-name-error">{fieldErrors.name}</FieldError>}
+            </div>
+            <div className="field">
+              <label htmlFor="withdrawal-email">
+                <span>
+                  E-Mail-Adresse <span className="field__req" aria-hidden="true">*</span>
+                </span>
+              </label>
+              <input
+                id="withdrawal-email"
+                ref={emailRef}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 maxLength={255}
                 required
+                aria-invalid={showError('email') ? true : undefined}
+                aria-describedby={showError('email') ? 'withdrawal-email-error' : undefined}
               />
-            </label>
-            <label className="field">
-              <span>
-                Bestellnummer <span style={{ color: 'var(--red)' }}>*</span>
-              </span>
-              <input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} maxLength={100} required />
-            </label>
-            <label className="field">
-              <span>Weitere Angaben (freiwillig)</span>
+              {showError('email') && <FieldError id="withdrawal-email-error">{fieldErrors.email}</FieldError>}
+            </div>
+            <div className="field">
+              <label htmlFor="withdrawal-order">
+                <span>
+                  Bestellnummer <span className="field__req" aria-hidden="true">*</span>
+                </span>
+              </label>
+              <input
+                id="withdrawal-order"
+                ref={orderRef}
+                value={orderNumber}
+                onChange={(e) => setOrderNumber(e.target.value)}
+                maxLength={100}
+                required
+                aria-invalid={showError('orderNumber') ? true : undefined}
+                aria-describedby={showError('orderNumber') ? 'withdrawal-order-error' : 'withdrawal-order-hint'}
+              />
+              {showError('orderNumber') ? (
+                <FieldError id="withdrawal-order-error">{fieldErrors.orderNumber}</FieldError>
+              ) : (
+                <p className="field__hint" id="withdrawal-order-hint">
+                  Steht in deiner Bestellbestätigung per E-Mail.
+                </p>
+              )}
+            </div>
+            <div className="field">
+              <label htmlFor="withdrawal-message">
+                <span>Weitere Angaben (freiwillig)</span>
+              </label>
               <textarea
+                id="withdrawal-message"
+                aria-describedby="withdrawal-message-hint"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
                 maxLength={2000}
-                placeholder="z. B. welche Artikel du widerrufst"
               />
-            </label>
+              <p className="field__hint" id="withdrawal-message-hint">
+                z. B. welche Artikel du widerrufst
+              </p>
+            </div>
             {/* Für Menschen unsichtbar; Bots füllen es meist aus. */}
             <div className="withdrawal__trap" aria-hidden="true">
               <label htmlFor="withdrawal-website">Website</label>
@@ -183,14 +248,35 @@ function WithdrawalForm() {
                 {error}
               </p>
             )}
-            <button type="submit" className="btn btn--primary" disabled={pending} data-testid="withdrawal-confirm">
-              {pending ? 'Wird gesendet …' : 'Widerruf bestätigen'}
+            {attempted && !valid && (
+              <p className="field__error" role="alert">
+                Bitte prüfe die markierten Felder.
+              </p>
+            )}
+            {/* § 356a BGB: Bestätigungsschaltfläche „Widerruf bestätigen“. */}
+            <button
+              type="submit"
+              className="btn btn--primary"
+              disabled={pending}
+              aria-busy={pending}
+              data-testid="withdrawal-confirm"
+            >
+              {pending ? 'Widerruf wird gesendet …' : 'Widerruf bestätigen'}
             </button>
           </form>
         )}
       </main>
       <ShopLegalFooter legal={data?.legal} eventId={eventId} />
     </>
+  );
+}
+
+/** Fehlermeldung unter einem Feld, per aria-describedby verknüpft. */
+function FieldError({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <p className="field__error" id={id}>
+      {children}
+    </p>
   );
 }
 

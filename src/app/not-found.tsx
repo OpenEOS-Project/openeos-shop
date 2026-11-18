@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { connection } from 'next/server';
 
 import { PlatformLegalFooter } from '@/components/shop-legal';
+import { ShopHeader } from '@/components/shop-header';
 import { fetchPlatformLegal } from '@/lib/platform-legal';
 
 export const metadata: Metadata = {
@@ -18,13 +19,8 @@ export default async function NotFound() {
   const platform = await fetchPlatformLegal();
   return (
     <div className="not-found">
-      <div className="shop-logo-bar">
-        <Link href="/" aria-label="OpenEOS Shop">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_dark.png" alt="OpenEOS" />
-        </Link>
-      </div>
-      <main className="not-found__main">
+      <ShopHeader href="/" label="OpenEOS Shop – Startseite" />
+      <main id="main" tabIndex={-1} className="not-found__main">
         <span className="not-found__code mono">Fehler 404</span>
         <h1 className="not-found__title">Shop nicht gefunden</h1>
         <p className="not-found__text">

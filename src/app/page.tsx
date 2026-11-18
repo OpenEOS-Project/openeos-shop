@@ -33,7 +33,7 @@ export default async function HomePage() {
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px var(--pad)' }}>
+      <main id="main" tabIndex={-1} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px var(--pad)' }}>
         <div style={{ maxWidth: 640, textAlign: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

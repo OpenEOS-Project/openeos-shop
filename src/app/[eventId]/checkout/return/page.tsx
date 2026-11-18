@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Loading02 } from '@untitledui/icons';
 
 import { shopApi } from '@/lib/api';
+import { ShopHeader } from '@/components/shop-header';
 import { ShopLegalFooter } from '@/components/shop-legal';
 import { useCartStore } from '@/stores/cart-store';
 
@@ -67,15 +68,16 @@ export default function CheckoutReturnPage() {
   if (!checkoutId) {
     content = (
       <div className="empty">
-        <h2>Ungültiger Link</h2>
+        <h1>Ungültiger Link</h1>
         <p>Es fehlt eine Checkout-ID.</p>
       </div>
     );
   } else if (status === 'paid') {
     content = (
-      <main className="shop-wrap" style={{ padding: '64px 0', maxWidth: 560 }}>
+      <div className="shop-wrap" style={{ padding: '64px 0', maxWidth: 560 }}>
         <div style={cardStyle}>
           <div
+            aria-hidden="true"
             style={{
               ...iconBubbleStyle,
               background: 'color-mix(in oklab, var(--green-soft) 70%, var(--paper))',
@@ -89,6 +91,7 @@ export default function CheckoutReturnPage() {
           </p>
           {orderNumber && (
             <p
+              aria-label={`Bestellnummer ${orderNumber}`}
               className="mono"
               style={{
                 marginTop: 20,
@@ -115,13 +118,14 @@ export default function CheckoutReturnPage() {
             Zum Shop
           </button>
         </div>
-      </main>
+      </div>
     );
   } else if (status === 'failed' || status === 'cancelled') {
     content = (
-      <main className="shop-wrap" style={{ padding: '64px 0', maxWidth: 560 }}>
+      <div className="shop-wrap" style={{ padding: '64px 0', maxWidth: 560 }}>
         <div style={cardStyle}>
           <div
+            aria-hidden="true"
             style={{
               ...iconBubbleStyle,
               background: 'color-mix(in oklab, var(--red) 12%, var(--paper))',
@@ -141,16 +145,17 @@ export default function CheckoutReturnPage() {
             style={{ marginTop: 24 }}
             onClick={() => router.replace(`/${eventId}/checkout`)}
           >
-            Erneut bezahlen
+            Zurück zur Kasse
           </button>
         </div>
-      </main>
+      </div>
     );
   } else {
     content = (
-      <main className="shop-wrap" style={{ padding: '64px 0', maxWidth: 560 }}>
+      <div className="shop-wrap" style={{ padding: '64px 0', maxWidth: 560 }}>
         <div style={cardStyle}>
           <Loading02
+            aria-hidden="true"
             style={{
               width: 32,
               height: 32,
@@ -165,19 +170,18 @@ export default function CheckoutReturnPage() {
           </p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </main>
+      </div>
     );
   }
 
   return (
     <>
-      <div className="shop-logo-bar">
-        <a href={`/${eventId}`} aria-label="OpenEOS Shop">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_dark.png" alt="OpenEOS" />
-        </a>
-      </div>
-      {content}
+      <ShopHeader href={`/${eventId}`} label="Zurück zum Shop" />
+      {/* Statuswechsel (wird geprüft → bezahlt/fehlgeschlagen) werden
+          angesagt (WCAG 4.1.3). */}
+      <main id="main" tabIndex={-1} aria-live="polite" aria-busy={!!checkoutId && (!status || status === 'pending')}>
+        {content}
+      </main>
       <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
     </>
   );

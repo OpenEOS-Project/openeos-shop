@@ -20,7 +20,7 @@ export function SourceCodeLink() {
       title="OpenEOS ist freie Software unter der AGPL-3.0-or-later. Hier findest du den Quellcode."
       style={{ color: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: 'middle' }}
     >
-      <Icon name="code" width={12} height={12} />
+      <Icon name="code" width={12} height={12} aria-hidden="true" />
       <span>Quellcode (AGPL-3.0)</span>
     </a>
   );

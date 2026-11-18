@@ -28,7 +28,8 @@ import { ProductImage } from '@/components/product-image';
 import { OnSiteOnlyNotice } from '@/components/on-site-only-notice';
 import { isOnlineOrderingAvailable } from '@/lib/operating-mode';
 import { formatPrice } from '@/lib/format';
-import Link from 'next/link';
+import { ShopHeader } from '@/components/shop-header';
+import { useDialogFocus } from '@/hooks/use-dialog-focus';
 
 const WINDOW_DAY = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
 const WINDOW_TIME = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -64,6 +65,8 @@ export default function ShopEventPage() {
   const cartHydrated = useCartHydration();
 
   const [optionsForProduct, setOptionsForProduct] = useState<ShopProduct | null>(null);
+  /** Ansage für Screenreader nach Änderungen am Warenkorb (WCAG 4.1.3). */
+  const [cartAnnouncement, setCartAnnouncement] = useState('');
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [closing, setClosing] = useState(false);
@@ -193,25 +196,20 @@ export default function ShopEventPage() {
 
   if (shopQuery.isLoading) {
     return (
-      <div className="empty">
-        <h2>Shop wird geladen…</h2>
-      </div>
+      <main id="main" className="empty" aria-busy="true">
+        <h1>Shop wird geladen …</h1>
+      </main>
     );
   }
 
   if (shopQuery.isError || !event) {
     return (
       <>
-        <div className="shop-logo-bar">
-          <Link href="/" aria-label="OpenEOS Shop">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo_dark.png" alt="OpenEOS" />
-          </Link>
-        </div>
-        <div className="empty">
-          <h2>Shop nicht gefunden</h2>
+        <ShopHeader href="/" label="OpenEOS Shop – Startseite" />
+        <main id="main" className="empty">
+          <h1>Shop nicht gefunden</h1>
           <p>Dieser Event-Shop ist nicht aktiviert oder die ID ist ungültig.</p>
-        </div>
+        </main>
       </>
     );
   }
@@ -219,20 +217,15 @@ export default function ShopEventPage() {
   if (!orderingAvailable) {
     return (
       <>
-        <div className="shop-logo-bar">
-          <Link href="/" aria-label="OpenEOS Shop">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo_dark.png" alt="OpenEOS" />
-          </Link>
-        </div>
+        <ShopHeader href="/" label="OpenEOS Shop – Startseite">
+          <div className="shop-header">
+            <span className="shop-header__crumb">
+              <b>{event.organizationName}</b> · Online-Shop
+            </span>
+          </div>
+        </ShopHeader>
 
-        <header className="shop-header">
-          <span className="shop-header__crumb">
-            <b>{event.organizationName}</b> · Online-Shop
-          </span>
-        </header>
-
-        <main className="shop-wrap">
+        <main id="main" tabIndex={-1} className="shop-wrap">
           <EventHero event={event} />
           <OnSiteOnlyNotice organizationName={event.organizationName} />
         </main>
@@ -246,12 +239,18 @@ export default function ShopEventPage() {
   const itemsTotal = cartTotal(items as CartItem[]);
   const total = itemsTotal + (items.length > 0 ? serviceFee : 0);
 
+  const announce = (message: string) => {
+    // Gleiche Meldung zweimal hintereinander soll erneut angesagt werden.
+    setCartAnnouncement((prev) => (prev === message ? `${message}\u00a0` : message));
+  };
+
   const handleProductAdd = (product: ShopProduct) => {
     if (product.options?.groups && product.options.groups.length > 0) {
       setOptionsForProduct(product);
       return;
     }
     addItem({ productId: product.id, name: product.name, unitPrice: product.price });
+    announce(`${product.name} in den Warenkorb gelegt.`);
   };
 
   const handleOptionsConfirm = (product: ShopProduct, options: SelectedOption[]) => {
@@ -261,21 +260,37 @@ export default function ShopEventPage() {
       unitPrice: product.price,
       options,
     });
+    announce(`${product.name} in den Warenkorb gelegt.`);
     setOptionsForProduct(null);
+  };
+
+  const handleDecrement = (signature: string) => {
+    const line = items.find((i) => i.signature === signature);
+    decrement(signature);
+    if (line) {
+      announce(
+        line.quantity > 1
+          ? `${line.name}: Menge ${line.quantity - 1}.`
+          : `${line.name} aus dem Warenkorb entfernt.`,
+      );
+    }
+  };
+  const handleIncrement = (item: Omit<CartItem, 'quantity' | 'signature'>) => {
+    const line = items.find((i) => i.productId === item.productId && i.options === item.options);
+    addItem(item);
+    announce(line ? `${item.name}: Menge ${line.quantity + 1}.` : `${item.name} in den Warenkorb gelegt.`);
+  };
+  const handleRemove = (signature: string) => {
+    const line = items.find((i) => i.signature === signature);
+    remove(signature);
+    if (line) announce(`${line.name} aus dem Warenkorb entfernt.`);
   };
 
   return (
     <>
-      {/* Logo bar */}
-      <div className="shop-logo-bar">
-        <Link href="/" aria-label="OpenEOS Shop">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_dark.png" alt="OpenEOS" />
-        </Link>
-      </div>
-
-      {/* Context strip */}
-      <header className="shop-header">
+      {/* Logo und Kontextstreifen */}
+      <ShopHeader href="/" label="OpenEOS Shop – Startseite">
+      <div className="shop-header">
         <span className="shop-header__crumb">
           <b>{event.organizationName}</b> · Online-Shop
         </span>
@@ -289,13 +304,20 @@ export default function ShopEventPage() {
         ) : isLive ? (
           <span className="mono shop-header__live">LIVE</span>
         ) : null}
-      </header>
+      </div>
+      </ShopHeader>
 
-      <main className="shop-wrap">
+      <main id="main" tabIndex={-1} className="shop-wrap">
+        {/* Ansagen zum Warenkorb; bleibt dauerhaft im DOM, damit Screenreader
+            Änderungen mitbekommen. */}
+        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {cartAnnouncement}
+          {cartAnnouncement && count > 0 ? ` Warenkorb: ${count} Artikel, ${formatPrice(total, currency)}.` : ''}
+        </p>
         {/* Test mode banner */}
         {isTest && (
           <div className="shop-banner shop-banner--test">
-            <AlertTriangle style={{ width: 18, height: 18, flexShrink: 0 }} />
+            <AlertTriangle aria-hidden="true" style={{ width: 18, height: 18, flexShrink: 0 }} />
             <span>
               <b>Test-Modus.</b> Bestellungen sind möglich, werden aber als Test-Bestellungen markiert.
             </span>
@@ -305,7 +327,7 @@ export default function ShopEventPage() {
         {/* Vorverkauf: echte Bestellungen schon vor der Veranstaltung. */}
         {isPresale && shopMeta?.presale?.until && (
           <div className="shop-banner shop-banner--presale">
-            <Clock style={{ width: 18, height: 18, flexShrink: 0 }} />
+            <Clock aria-hidden="true" style={{ width: 18, height: 18, flexShrink: 0 }} />
             <span>
               <b>Vorverkauf.</b> Du kannst schon jetzt bestellen – bis{' '}
               {WINDOW_DAY.format(new Date(shopMeta.presale.until))} um{' '}
@@ -380,14 +402,19 @@ export default function ShopEventPage() {
           </div>
 
           {/* Sticky cart sidebar (md+) */}
-          <aside className="shop-layout__cart">
+          <aside className="shop-layout__cart" aria-labelledby="shop-cart-title">
             <div className="shop-cart">
               <div className="shop-cart__head">
-                <h2 className="shop-cart__title">
-                  <ShoppingCart01 style={{ width: 18, height: 18, color: 'var(--green-ink)' }} />
+                <h2 className="shop-cart__title" id="shop-cart-title">
+                  <ShoppingCart01 aria-hidden="true" style={{ width: 18, height: 18, color: 'var(--green-ink)' }} />
                   Warenkorb
                 </h2>
-                {count > 0 && !legalMissing && <span className="shop-cart__count">{count}</span>}
+                {count > 0 && !legalMissing && (
+                  <span className="shop-cart__count">
+                    {count}
+                    <span className="sr-only"> Artikel</span>
+                  </span>
+                )}
               </div>
               {legalMissing ? (
                 <p className="shop-cart__hint">
@@ -403,9 +430,9 @@ export default function ShopEventPage() {
                         key={i.signature ?? i.productId}
                         item={i}
                         currency={currency}
-                        onDecrement={decrement}
-                        onIncrement={addItem}
-                        onRemove={remove}
+                        onDecrement={handleDecrement}
+                        onIncrement={handleIncrement}
+                        onRemove={handleRemove}
                       />
                     ))}
                   </div>
@@ -452,83 +479,67 @@ export default function ShopEventPage() {
         <button
           className="cart-bar shop-cart-bar--mobile"
           type="button"
+          aria-haspopup="dialog"
+          aria-expanded={mobileCartOpen}
           onClick={() => setMobileCartOpen(true)}
         >
-          <span className="cart-bar__count">{count}</span>
-          <ShoppingCart01 style={{ width: 18, height: 18, flexShrink: 0 }} />
+          <span className="cart-bar__count">
+            {count}
+            <span className="sr-only"> Artikel im</span>
+          </span>
+          <ShoppingCart01 aria-hidden="true" style={{ width: 18, height: 18, flexShrink: 0 }} />
           <span className="cart-bar__label">Warenkorb</span>
           <span className="cart-bar__total mono">{formatPrice(total, currency)}</span>
         </button>
       )}
 
       {mobileCartOpen && (
-        <div className="cart-sheet__overlay" onClick={closeMobileSheet}>
-          <div
-            className={`cart-sheet${closing ? ' cart-sheet--closing' : ''}`}
-            style={dragOffset > 0 && !closing ? { transform: `translateY(${dragOffset}px)`, animation: 'none' } : undefined}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="cart-sheet__handle"
-              onTouchStart={handleSheetTouchStart}
-              onTouchMove={handleSheetTouchMove}
-              onTouchEnd={handleSheetTouchEnd}
-              onTouchCancel={handleSheetTouchEnd}
-              aria-hidden="true"
-            />
-            <div className="cart-sheet__head">
-              <h2 className="cart-sheet__title">
-                <ShoppingCart01 style={{ width: 18, height: 18, color: 'var(--green-ink)' }} />
-                Warenkorb
-              </h2>
-              <button
-                type="button"
-                className="cart-sheet__close"
-                aria-label="Warenkorb schließen"
-                onClick={closeMobileSheet}
-              >
-                <X style={{ width: 20, height: 20 }} />
-              </button>
-            </div>
-            <div className="cart-sheet__items">
-              {items.map((i) => (
-                <CartLine
-                  key={i.signature ?? i.productId}
-                  item={i}
-                  currency={currency}
-                  onDecrement={decrement}
-                  onIncrement={addItem}
-                  onRemove={remove}
-                />
-              ))}
-            </div>
-            {serviceFee > 0 && (
-              <div className="shop-cart__fee-row">
-                <span>Zwischensumme</span>
-                <span className="mono">{formatPrice(itemsTotal, currency)}</span>
-              </div>
-            )}
-            {serviceFee > 0 && (
-              <div className="shop-cart__fee-row">
-                <span>Servicegebühr</span>
-                <span className="mono">{formatPrice(serviceFee, currency)}</span>
-              </div>
-            )}
-            <div className="shop-cart__total">
-              <span>Gesamt</span>
-              <span className="mono">{formatPrice(total, currency)}</span>
-            </div>
-            <button
-              type="button"
-              className="btn btn--primary"
-              style={{ width: '100%', marginTop: 14, padding: '12px 16px' }}
-              disabled={items.length === 0}
-              onClick={() => router.push(`/${eventId}/checkout`)}
-            >
-              Zur Kasse · {formatPrice(total, currency)}
-            </button>
+        <MobileCartSheet
+          closing={closing}
+          dragOffset={dragOffset}
+          onClose={closeMobileSheet}
+          onTouchStart={handleSheetTouchStart}
+          onTouchMove={handleSheetTouchMove}
+          onTouchEnd={handleSheetTouchEnd}
+        >
+          <div className="cart-sheet__items">
+            {items.map((i) => (
+              <CartLine
+                key={i.signature ?? i.productId}
+                item={i}
+                currency={currency}
+                onDecrement={handleDecrement}
+                onIncrement={handleIncrement}
+                onRemove={handleRemove}
+              />
+            ))}
           </div>
-        </div>
+          {serviceFee > 0 && (
+            <div className="shop-cart__fee-row">
+              <span>Zwischensumme</span>
+              <span className="mono">{formatPrice(itemsTotal, currency)}</span>
+            </div>
+          )}
+          {serviceFee > 0 && (
+            <div className="shop-cart__fee-row">
+              <span>Servicegebühr</span>
+              <span className="mono">{formatPrice(serviceFee, currency)}</span>
+            </div>
+          )}
+          <div className="shop-cart__total">
+            <span>Gesamt</span>
+            <span className="mono">{formatPrice(total, currency)}</span>
+          </div>
+          <button
+            type="button"
+            className="btn btn--primary"
+            style={{ width: '100%', marginTop: 14, padding: '12px 16px' }}
+            disabled={items.length === 0}
+            onClick={() => router.push(`/${eventId}/checkout`)}
+          >
+            Zur Kasse · {formatPrice(total, currency)}
+          </button>
+        </MobileCartSheet>
       )}
 
       {optionsForProduct && (
@@ -544,6 +555,63 @@ export default function ShopEventPage() {
         />
       )}
     </>
+  );
+}
+
+/**
+ * Warenkorb als Bottom-Sheet auf dem Handy: modaler Dialog mit Fokus im
+ * Sheet, Escape zum Schließen und Rückkehr des Fokus auf die Leiste.
+ */
+function MobileCartSheet({
+  closing,
+  dragOffset,
+  onClose,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  children,
+}: {
+  closing: boolean;
+  dragOffset: number;
+  onClose: () => void;
+  onTouchStart: (e: React.TouchEvent) => void;
+  onTouchMove: (e: React.TouchEvent) => void;
+  onTouchEnd: () => void;
+  children: React.ReactNode;
+}) {
+  const dialogRef = useDialogFocus<HTMLDivElement>(onClose);
+  return (
+    <div className="cart-sheet__overlay" onClick={onClose}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-sheet-title"
+        tabIndex={-1}
+        className={`cart-sheet${closing ? ' cart-sheet--closing' : ''}`}
+        style={dragOffset > 0 && !closing ? { transform: `translateY(${dragOffset}px)`, animation: 'none' } : undefined}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="cart-sheet__handle"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onTouchCancel={onTouchEnd}
+          aria-hidden="true"
+        />
+        <div className="cart-sheet__head">
+          <h2 className="cart-sheet__title" id="cart-sheet-title">
+            <ShoppingCart01 aria-hidden="true" style={{ width: 18, height: 18, color: 'var(--green-ink)' }} />
+            Warenkorb
+          </h2>
+          <button type="button" className="cart-sheet__close" aria-label="Warenkorb schließen" onClick={onClose}>
+            <X aria-hidden="true" style={{ width: 20, height: 20 }} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -610,7 +678,7 @@ function CartLine({ item, currency, onDecrement, onIncrement, onRemove }: CartLi
           >
             −
           </button>
-          <span>{item.quantity}</span>
+          <span aria-label={`Menge: ${item.quantity}`}>{item.quantity}</span>
           <button
             type="button"
             aria-label={`${item.name} mehr`}
@@ -628,7 +696,7 @@ function CartLine({ item, currency, onDecrement, onIncrement, onRemove }: CartLi
           aria-label={`${item.name} entfernen`}
           onClick={() => signature && onRemove(signature)}
         >
-          <Trash01 style={{ width: 18, height: 18 }} />
+          <Trash01 aria-hidden="true" style={{ width: 18, height: 18 }} />
         </button>
       </div>
     </div>
@@ -637,9 +705,10 @@ function CartLine({ item, currency, onDecrement, onIncrement, onRemove }: CartLi
 
 function ProductCard({ product, currency, disabled, onAdd }: ProductCardProps) {
   return (
-    <div className="card" style={{ opacity: disabled ? 0.55 : 1 }}>
-      <div className="card__image">
-        <ProductImage imageUrl={product.imageUrl} productName={product.name} />
+    <div className={disabled ? 'card card--disabled' : 'card'}>
+      {/* Bild ist Schmuck: der Name steht direkt darunter als Überschrift. */}
+      <div className="card__image" aria-hidden="true">
+        <ProductImage imageUrl={product.imageUrl} productName={product.name} decorative />
       </div>
       <div className="card__body">
         <h3 className="card__title">{product.name}</h3>
@@ -647,7 +716,14 @@ function ProductCard({ product, currency, disabled, onAdd }: ProductCardProps) {
       </div>
       <div className="card__foot">
         <span className="card__price">{formatPrice(product.price, currency)}</span>
-        <button type="button" className="btn btn--primary" onClick={onAdd} disabled={disabled}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={onAdd}
+          disabled={disabled}
+          aria-label={`${product.name} hinzufügen`}
+          aria-haspopup={product.options?.groups?.length ? 'dialog' : undefined}
+        >
           Hinzufügen
         </button>
       </div>
@@ -697,8 +773,8 @@ function ClosedCard({ meta, event }: { meta: ShopMeta; event: ShopEvent }) {
   const schedule = meta.windows.slice(0, 14).map(formatWindow);
 
   return (
-    <div className="shop-banner shop-banner--closed" role="alert">
-      <Clock style={{ width: 22, height: 22, flexShrink: 0, color: 'var(--green-ink)' }} />
+    <div className="shop-banner shop-banner--closed" role="status">
+      <Clock aria-hidden="true" style={{ width: 22, height: 22, flexShrink: 0, color: 'var(--green-ink)' }} />
       <div style={{ minWidth: 0 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>{title}</h2>
         <p style={{ fontSize: 13, color: 'var(--mute)', margin: '4px 0 0' }}>{message}</p>
