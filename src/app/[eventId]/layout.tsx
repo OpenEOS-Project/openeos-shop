@@ -37,7 +37,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { eventId } = await params;
   const shop = await loadShop(eventId);
-  if (!shop || shop === 'missing') return {};
+  if (shop === 'missing') return { title: 'Shop nicht gefunden · OpenEOS Shop' };
+  if (!shop) return {};
   return { title: { default: shop.event.name, template: `%s · ${shop.event.name} · OpenEOS Shop` } };
 }
 
