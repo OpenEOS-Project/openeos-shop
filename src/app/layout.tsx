@@ -11,7 +11,8 @@ import { RuntimeConfigScript } from '@/components/runtime-config-script';
    Geist 800. */
 
 export const metadata: Metadata = {
-  title: 'OpenEOS Shop',
+  // Eigener Seitentitel je Seite (WCAG 2.4.2), z. B. „Kasse · Sommerfest · OpenEOS Shop“.
+  title: { default: 'OpenEOS Shop', template: '%s · OpenEOS Shop' },
   description: 'Bestelle Speisen und Getränke direkt online.',
 };
 
@@ -19,6 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de" className={openEosFonts.className}>
       <body>
+        <a href="#main" className="skip-link">
+          Zum Inhalt springen
+        </a>
         <RuntimeConfigScript />
         <Providers>{children}</Providers>
       </body>

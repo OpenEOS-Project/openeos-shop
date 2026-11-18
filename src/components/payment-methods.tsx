@@ -19,7 +19,7 @@ const badgeBase: React.CSSProperties = {
 
 function Visa() {
   return (
-    <span aria-label="Visa" style={{ ...badgeBase, background: '#1A1F71', color: '#fff', fontStyle: 'italic' }}>
+    <span role="img" aria-label="Visa" style={{ ...badgeBase, background: '#1A1F71', color: '#fff', fontStyle: 'italic' }}>
       VISA
     </span>
   );
@@ -27,7 +27,7 @@ function Visa() {
 
 function Mastercard() {
   return (
-    <span aria-label="Mastercard" style={{ ...badgeBase, gap: 0, padding: '0 6px' }}>
+    <span role="img" aria-label="Mastercard" style={{ ...badgeBase, gap: 0, padding: '0 6px' }}>
       <span
         style={{
           width: 14,
@@ -54,7 +54,7 @@ function Mastercard() {
 
 function Amex() {
   return (
-    <span aria-label="American Express" style={{ ...badgeBase, background: '#1F72CD', color: '#fff' }}>
+    <span role="img" aria-label="American Express" style={{ ...badgeBase, background: '#1F72CD', color: '#fff' }}>
       AMEX
     </span>
   );
@@ -62,7 +62,7 @@ function Amex() {
 
 function Maestro() {
   return (
-    <span aria-label="Maestro" style={{ ...badgeBase, gap: 0, padding: '0 6px' }}>
+    <span role="img" aria-label="Maestro" style={{ ...badgeBase, gap: 0, padding: '0 6px' }}>
       <span
         style={{
           width: 14,
@@ -89,7 +89,7 @@ function Maestro() {
 
 function ApplePay() {
   return (
-    <span aria-label="Apple Pay" style={{ ...badgeBase, background: '#000', color: '#fff', gap: 3 }}>
+    <span role="img" aria-label="Apple Pay" style={{ ...badgeBase, background: '#000', color: '#fff', gap: 3 }}>
       <svg viewBox="0 0 170 170" width="11" height="11" aria-hidden="true">
         <path
           fill="currentColor"
@@ -103,7 +103,7 @@ function ApplePay() {
 
 function GooglePay() {
   return (
-    <span aria-label="Google Pay" style={{ ...badgeBase, background: '#fff', color: '#3C4043', gap: 3 }}>
+    <span role="img" aria-label="Google Pay" style={{ ...badgeBase, background: '#fff', color: '#3C4043', gap: 3 }}>
       <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
         <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16Z" fill="#fff" />
         <path d="M8.16 7.13v1.83h2.55c-.1.6-.42 1.1-.89 1.43v1.18h1.44c.84-.77 1.32-1.91 1.32-3.26 0-.32-.03-.62-.08-.92H8.16Z" fill="#4285F4" />
@@ -130,10 +130,10 @@ export function PaymentMethods() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--ink-2)', fontWeight: 600 }}>
-        <Lock01 style={{ width: 14, height: 14 }} />
+        <Lock01 aria-hidden="true" style={{ width: 14, height: 14 }} />
         Sichere Zahlung über SumUp
       </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      <div role="group" aria-label="Akzeptierte Zahlungsarten" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <Visa />
         <Mastercard />
         <Maestro />

@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 
-import { ShopApiError, shopApi } from '@/lib/api';
+import { ShopApiError, shopApi, type ShopInfo } from '@/lib/api';
 
 /** Event-IDs sind UUIDs — alles andere (favicon.ico, robots.txt, Tippfehler)
     ist keine Veranstaltung. */
@@ -16,16 +18,27 @@ const EVENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
  * ihre eigene Fehlermeldung — ein Ausfall soll nicht als 404 gecacht
  * oder indexiert werden.
  */
-async function shopIsMissing(eventId: string): Promise<boolean> {
+const loadShop = cache(async (eventId: string): Promise<ShopInfo | 'missing' | null> => {
+  if (!EVENT_ID_PATTERN.test(eventId)) return 'missing';
   try {
-    await shopApi.getShop(eventId);
-    return false;
+    return (await shopApi.getShop(eventId)).data;
   } catch (error) {
-    return (
-      error instanceof ShopApiError &&
-      (error.status === 404 || error.code === 'SHOP_NOT_FOUND')
-    );
+    const missing =
+      error instanceof ShopApiError && (error.status === 404 || error.code === 'SHOP_NOT_FOUND');
+    return missing ? 'missing' : null;
   }
+});
+
+/** Seitentitel mit dem Namen der Veranstaltung (WCAG 2.4.2). */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ eventId: string }>;
+}): Promise<Metadata> {
+  const { eventId } = await params;
+  const shop = await loadShop(eventId);
+  if (!shop || shop === 'missing') return {};
+  return { title: { default: shop.event.name, template: `%s · ${shop.event.name} · OpenEOS Shop` } };
 }
 
 export default async function EventLayout({
@@ -36,7 +49,7 @@ export default async function EventLayout({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  if (!EVENT_ID_PATTERN.test(eventId) || (await shopIsMissing(eventId))) {
+  if ((await loadShop(eventId)) === 'missing') {
     notFound();
   }
   return children;

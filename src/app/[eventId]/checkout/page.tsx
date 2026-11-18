@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, ArrowLeft } from '@untitledui/icons';
 import Link from 'next/link';
+
+import { ShopHeader } from '@/components/shop-header';
 
 import { shopApi, ShopApiError } from '@/lib/api';
 import { useCartStore, useCartHydration, cartTotal, lineUnitPrice, type CartItem } from '@/stores/cart-store';
@@ -81,6 +83,13 @@ export default function CheckoutPage() {
   const [tableNumber, setTableNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<FriendlyError | null>(null);
+  /** Erst nach dem ersten Absenden Fehler an den Feldern zeigen. */
+  const [attempted, setAttempted] = useState(false);
+  const tableRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   /** Die API hat mit ORDER_ONLY_MODE abgelehnt — Betriebsart wurde gerade umgestellt. */
   const [orderOnlyRejected, setOrderOnlyRejected] = useState(false);
   /** Die API hat mit LEGAL_INFO_MISSING abgelehnt — Angaben wurden gerade entfernt. */
@@ -124,14 +133,42 @@ export default function CheckoutPage() {
   const itemsTotal = cartTotal(items as CartItem[]);
   const total = itemsTotal + (items.length > 0 ? serviceFee : 0);
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const nameValid = firstName.trim().length >= 2 && lastName.trim().length >= 2;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const firstNameValid = firstName.trim().length >= 2;
+  const lastNameValid = lastName.trim().length >= 2;
   const tableValid = fulfillment !== 'table_service' || tableNumber.trim().length > 0;
-  const canSubmit = emailValid && nameValid && tableValid && items.length > 0 && !submitting;
+  const formValid = emailValid && firstNameValid && lastNameValid && tableValid;
+
+  /* Fehler je Feld — als Text am Feld, per aria-describedby verknüpft
+     (WCAG 3.3.1, 3.3.3). Der Button bleibt bedienbar, damit niemand vor
+     einem ausgegrauten Button ohne Erklärung steht. */
+  const fieldErrors = {
+    table: !tableValid ? 'Bitte gib deine Tischnummer ein.' : null,
+    email: !email.trim()
+      ? 'Bitte gib deine E-Mail-Adresse ein.'
+      : !emailValid
+        ? 'Bitte gib eine gültige E-Mail-Adresse ein, z. B. name@beispiel.de.'
+        : null,
+    firstName: !firstNameValid ? 'Bitte gib deinen Vornamen ein (mindestens 2 Zeichen).' : null,
+    lastName: !lastNameValid ? 'Bitte gib deinen Nachnamen ein (mindestens 2 Zeichen).' : null,
+  };
+  const showError = (key: keyof typeof fieldErrors) => (attempted ? fieldErrors[key] : null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (submitting || items.length === 0) return;
+    if (!formValid) {
+      setAttempted(true);
+      const firstInvalid = !tableValid
+        ? tableRef.current
+        : !emailValid
+          ? emailRef.current
+          : !firstNameValid
+            ? firstNameRef.current
+            : lastNameRef.current;
+      firstInvalid?.focus();
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -163,6 +200,8 @@ export default function CheckoutPage() {
         return;
       }
       setError(mapCheckoutError(err));
+      // Meldung vorlesen lassen und den Fokus dorthin setzen.
+      window.setTimeout(() => errorRef.current?.focus(), 0);
     }
   };
 
@@ -171,15 +210,10 @@ export default function CheckoutPage() {
       shopQuery.data?.data.event.organizationName ?? shopQuery.data?.data.legal?.organizationName;
     return (
       <>
-        <div className="shop-logo-bar">
-          <a href={`/${eventId}`} aria-label="OpenEOS Shop">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo_dark.png" alt="OpenEOS" />
-          </a>
-        </div>
-        <main className="shop-wrap" style={{ paddingTop: 24, paddingBottom: 80 }}>
+        <ShopHeader href={`/${eventId}`} label="Zurück zum Shop" />
+        <main id="main" tabIndex={-1} className="shop-wrap" style={{ paddingTop: 24, paddingBottom: 80 }}>
           <Link href={`/${eventId}`} className="checkout-back">
-            <ArrowLeft style={{ width: 16, height: 16 }} />
+            <ArrowLeft aria-hidden="true" style={{ width: 16, height: 16 }} />
             Zurück zur Veranstaltung
           </Link>
           <div style={{ marginTop: 16 }}>
@@ -197,28 +231,28 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <div className="shop-logo-bar">
-        <a href={`/${eventId}`} aria-label="OpenEOS Shop">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_dark.png" alt="OpenEOS" />
-        </a>
-      </div>
-    <main className="shop-wrap" style={{ paddingTop: 24, paddingBottom: 80 }}>
+      <ShopHeader href={`/${eventId}`} label="Zurück zum Shop" />
+    <main id="main" tabIndex={-1} className="shop-wrap" style={{ paddingTop: 24, paddingBottom: 80 }}>
       <Link href={`/${eventId}`} className="checkout-back">
-        <ArrowLeft style={{ width: 16, height: 16 }} />
+        <ArrowLeft aria-hidden="true" style={{ width: 16, height: 16 }} />
         Zurück zur Produktauswahl
       </Link>
       <h1 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 800, letterSpacing: '-0.02em', margin: '12px 0 0' }}>
         Kasse
       </h1>
       <p style={{ color: 'var(--mute)', marginTop: 8 }}>
-        Pflichtfelder sind mit * markiert: E-Mail, Vor- und Nachname — bei „An den Tisch“ auch die
+        Pflichtfelder sind mit <span aria-hidden="true">*</span> markiert: E-Mail, Vor- und Nachname — bei „An den Tisch“ auch die
         Tischnummer. An deine E-Mail schicken wir die Bestellbestätigung, dein Name steht für die
         Ausgabe auf der Bestellung.
       </p>
 
       <div className="checkout-layout">
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          aria-busy={submitting}
+          style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+        >
           <section
             style={{
               padding: 20,
@@ -227,7 +261,8 @@ export default function CheckoutPage() {
               border: '1px solid color-mix(in oklab, var(--ink) 8%, transparent)',
             }}
           >
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 14px' }}>Wie möchtest du deine Bestellung erhalten?</h2>
+            <fieldset className="checkout-fieldset">
+            <legend>Wie möchtest du deine Bestellung erhalten?</legend>
             <div className="checkout-fulfillment">
               <label className={`checkout-fulfillment__opt${fulfillment === 'counter_pickup' ? ' is-selected' : ''}`}>
                 <input
@@ -236,10 +271,13 @@ export default function CheckoutPage() {
                   value="counter_pickup"
                   checked={fulfillment === 'counter_pickup'}
                   onChange={() => setFulfillment('counter_pickup')}
+                  aria-describedby="fulfillment-pickup-sub"
                 />
                 <div>
                   <div className="checkout-fulfillment__title">Abholung (To Go)</div>
-                  <div className="checkout-fulfillment__sub">Du holst deine Bestellung an der Abholstation ab.</div>
+                  <div className="checkout-fulfillment__sub" id="fulfillment-pickup-sub">
+                    Du holst deine Bestellung an der Abholstation ab.
+                  </div>
                 </div>
               </label>
               <label className={`checkout-fulfillment__opt${fulfillment === 'table_service' ? ' is-selected' : ''}`}>
@@ -249,27 +287,44 @@ export default function CheckoutPage() {
                   value="table_service"
                   checked={fulfillment === 'table_service'}
                   onChange={() => setFulfillment('table_service')}
+                  aria-describedby="fulfillment-table-sub"
                 />
                 <div>
                   <div className="checkout-fulfillment__title">An den Tisch</div>
-                  <div className="checkout-fulfillment__sub">Wir bringen die Bestellung direkt an deinen Tisch.</div>
+                  <div className="checkout-fulfillment__sub" id="fulfillment-table-sub">
+                    Wir bringen die Bestellung direkt an deinen Tisch.
+                  </div>
                 </div>
               </label>
             </div>
+            </fieldset>
             {fulfillment === 'table_service' && (
-              <label className="field" style={{ marginTop: 14 }}>
-                <span>
-                  Tischnummer <span style={{ color: 'var(--red)' }}>*</span>
-                </span>
+              <div className="field" style={{ marginTop: 14 }}>
+                <label htmlFor="checkout-table">
+                  <span>
+                    Tischnummer <span className="field__req" aria-hidden="true">*</span>
+                  </span>
+                </label>
                 <input
+                  id="checkout-table"
+                  ref={tableRef}
                   value={tableNumber}
                   onChange={(e) => setTableNumber(e.target.value)}
-                  placeholder="z. B. 12"
                   inputMode="numeric"
+                  autoComplete="off"
                   required
                   maxLength={50}
+                  aria-invalid={showError('table') ? true : undefined}
+                  aria-describedby={showError('table') ? 'checkout-table-error' : 'checkout-table-hint'}
                 />
-              </label>
+                {showError('table') ? (
+                  <FieldError id="checkout-table-error">{fieldErrors.table}</FieldError>
+                ) : (
+                  <p className="field__hint" id="checkout-table-hint">
+                    Die Nummer steht auf dem Schild an deinem Tisch, z. B. 12.
+                  </p>
+                )}
+              </div>
             )}
           </section>
 
@@ -282,19 +337,25 @@ export default function CheckoutPage() {
             }}
           >
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 14px' }}>Kontakt</h2>
-            <label className="field">
-              <span>
-                E-Mail <span style={{ color: 'var(--red)' }}>*</span>
-              </span>
+            <div className="field">
+              <label htmlFor="checkout-email">
+                <span>
+                  E-Mail <span className="field__req" aria-hidden="true">*</span>
+                </span>
+              </label>
               <input
+                id="checkout-email"
+                ref={emailRef}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="du@beispiel.de"
                 autoComplete="email"
+                aria-invalid={showError('email') ? true : undefined}
+                aria-describedby={showError('email') ? 'checkout-email-error' : undefined}
               />
-            </label>
+              {showError('email') && <FieldError id="checkout-email-error">{fieldErrors.email}</FieldError>}
+            </div>
             {/* Art. 13 DSGVO: direkt beim Erheben sagen, wer die Daten
                 verarbeitet und wo der Datenschutzhinweis steht. */}
             <CheckoutPrivacyHint legal={shopQuery.data?.data.legal} eventId={eventId} />
@@ -308,25 +369,59 @@ export default function CheckoutPage() {
               border: '1px solid color-mix(in oklab, var(--ink) 8%, transparent)',
             }}
           >
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>Dein Name *</h2>
-            <p style={{ fontSize: 12, color: 'var(--mute)', margin: '0 0 14px' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>Dein Name</h2>
+            <p id="checkout-name-hint" style={{ fontSize: 12, color: 'var(--mute)', margin: '0 0 14px' }}>
               Steht auf deiner Bestellung — so finden wir dich bei der Ausgabe.
             </p>
             <div className="checkout-row checkout-row--name">
-              <label className="field">
-                <span>Vorname *</span>
-                <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" required />
-              </label>
-              <label className="field">
-                <span>Nachname *</span>
-                <input value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" required />
-              </label>
+              <div className="field">
+                <label htmlFor="checkout-first-name">
+                  <span>
+                    Vorname <span className="field__req" aria-hidden="true">*</span>
+                  </span>
+                </label>
+                <input
+                  id="checkout-first-name"
+                  ref={firstNameRef}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                  required
+                  aria-invalid={showError('firstName') ? true : undefined}
+                  aria-describedby={showError('firstName') ? 'checkout-first-name-error' : 'checkout-name-hint'}
+                />
+                {showError('firstName') && (
+                  <FieldError id="checkout-first-name-error">{fieldErrors.firstName}</FieldError>
+                )}
+              </div>
+              <div className="field">
+                <label htmlFor="checkout-last-name">
+                  <span>
+                    Nachname <span className="field__req" aria-hidden="true">*</span>
+                  </span>
+                </label>
+                <input
+                  id="checkout-last-name"
+                  ref={lastNameRef}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                  required
+                  aria-invalid={showError('lastName') ? true : undefined}
+                  aria-describedby={showError('lastName') ? 'checkout-last-name-error' : 'checkout-name-hint'}
+                />
+                {showError('lastName') && (
+                  <FieldError id="checkout-last-name-error">{fieldErrors.lastName}</FieldError>
+                )}
+              </div>
             </div>
           </section>
 
           {error && (
             <div
               role="alert"
+              ref={errorRef}
+              tabIndex={-1}
               style={{
                 display: 'flex',
                 gap: 12,
@@ -337,9 +432,9 @@ export default function CheckoutPage() {
                 border: '1px solid color-mix(in oklab, var(--red) 30%, transparent)',
               }}
             >
-              <AlertCircle style={{ width: 20, height: 20, color: 'var(--red)', flexShrink: 0, marginTop: 2 }} />
+              <AlertCircle aria-hidden="true" style={{ width: 20, height: 20, color: 'var(--red-ink)', flexShrink: 0, marginTop: 2 }} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>{error.title}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--red-ink)' }}>{error.title}</div>
                 {error.detail && (
                   <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 4 }}>{error.detail}</div>
                 )}
@@ -351,13 +446,30 @@ export default function CheckoutPage() {
 
           <CheckoutSubmitLegalNote legal={shopQuery.data?.data.legal} eventId={eventId} />
 
-          <button type="submit" className="btn btn--primary" disabled={!canSubmit} style={{ padding: '14px 22px', fontSize: 15 }}>
-            {submitting ? 'Wird verbunden …' : 'Jetzt bezahlen'}
+          {/* § 312j Abs. 3 BGB: Der Button, mit dem die Bestellung abgeschickt
+              wird, heißt „zahlungspflichtig bestellen“ — auch während des Sendens. */}
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={submitting || items.length === 0}
+            aria-describedby={attempted && !formValid ? 'checkout-form-errors' : undefined}
+            style={{ padding: '14px 22px', fontSize: 15 }}
+            data-testid="checkout-submit"
+          >
+            {submitting ? 'Zahlungspflichtig bestellen …' : 'Zahlungspflichtig bestellen'}
           </button>
+          {attempted && !formValid && (
+            <p id="checkout-form-errors" className="field__error" style={{ justifyContent: 'center' }}>
+              Bitte prüfe die markierten Felder.
+            </p>
+          )}
+          <p className="sr-only" role="status" aria-live="polite">
+            {submitting ? 'Bestellung wird übermittelt. Du wirst gleich zur Bezahlung bei SumUp weitergeleitet.' : ''}
+          </p>
         </form>
 
         <aside className="checkout-summary">
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 14px' }}>Bestellung</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 14px' }}>Deine Bestellung</h2>
           <div
             style={{
               fontSize: 12,
@@ -435,7 +547,7 @@ export default function CheckoutPage() {
               {formatPrice(total, currency)}
             </span>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--mute)', marginTop: 12 }}>
+          <p style={{ fontSize: 12, color: 'var(--mute)', marginTop: 12 }}>
             Bezahlung erfolgt sicher über SumUp. Erst nach erfolgreicher Zahlung wird die Bestellung erstellt.
           </p>
         </aside>
@@ -443,5 +555,15 @@ export default function CheckoutPage() {
     </main>
     <ShopLegalFooter legal={shopQuery.data?.data.legal} eventId={eventId} />
     </>
+  );
+}
+
+/** Fehlermeldung unter einem Feld, per aria-describedby verknüpft. */
+function FieldError({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <p className="field__error" id={id}>
+      <AlertCircle aria-hidden="true" style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} />
+      <span>{children}</span>
+    </p>
   );
 }

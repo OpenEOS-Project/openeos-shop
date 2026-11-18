@@ -151,7 +151,7 @@ export function LegalMissingNotice({ legal }: { legal: ShopLegal | null | undefi
 }
 
 /**
- * Kurzer Hinweis direkt ueber "Jetzt bezahlen": bei wem bestellt wird und
+ * Kurzer Hinweis direkt ueber „Zahlungspflichtig bestellen“: bei wem bestellt wird und
  * wo der Datenschutzhinweis steht.
  */
 export function CheckoutSubmitLegalNote({ legal, eventId }: { legal: ShopLegal | null | undefined; eventId: string }) {

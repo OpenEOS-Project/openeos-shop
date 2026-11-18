@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { X, Check } from '@untitledui/icons';
 
 import type {
@@ -9,6 +9,7 @@ import type {
   ShopProduct,
 } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
+import { useDialogFocus } from '@/hooks/use-dialog-focus';
 
 interface ProductOptionsSheetProps {
   product: ShopProduct;
@@ -76,6 +77,8 @@ export function ProductOptionsSheet({
   // Der useState-Initializer laeuft dann pro Produkt genau einmal frisch.
   const [selected, setSelected] = useState<SelectedOption[]>(() => buildDefaults(groups));
   const [closing, setClosing] = useState(false);
+  const titleId = useId();
+  const missingId = useId();
 
   const isOptionSelected = (groupName: string, optionName: string) => {
     const o = selected.find((s) => s.group === groupName && s.option === optionName);
@@ -133,6 +136,8 @@ export function ProductOptionsSheet({
     setClosing(true);
     window.setTimeout(onClose, 200);
   };
+  const dialogRef = useDialogFocus<HTMLDivElement>(close);
+  const missingGroups = groups.filter((g) => g.required && !selected.some((s) => s.group === g.name && !s.excluded));
 
   const handleConfirm = () => {
     if (!requirementsMet) return;
@@ -148,14 +153,18 @@ export function ProductOptionsSheet({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 60 }}
+      aria-labelledby={titleId}
+      tabIndex={-1}
+      style={{ position: 'fixed', inset: 0, zIndex: 60, outline: 'none' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) close();
       }}
     >
       <div
+        aria-hidden="true"
         onClick={close}
         style={{
           position: 'absolute',
@@ -184,7 +193,7 @@ export function ProductOptionsSheet({
           animation: closing ? undefined : 'shop-sheet-up .22s ease',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, flexShrink: 0 }}>
+        <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, flexShrink: 0 }}>
           <div style={{ width: 44, height: 4, background: 'color-mix(in oklab, var(--ink) 18%, transparent)', borderRadius: 999 }} />
         </div>
 
@@ -200,6 +209,7 @@ export function ProductOptionsSheet({
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             <h2
+              id={titleId}
               style={{
                 fontSize: 17,
                 fontWeight: 700,
@@ -223,6 +233,8 @@ export function ProductOptionsSheet({
             aria-label="Schließen"
             style={{
               padding: 8,
+              minWidth: 44,
+              minHeight: 44,
               borderRadius: 'var(--r-sm)',
               background: 'transparent',
               border: 'none',
@@ -234,14 +246,21 @@ export function ProductOptionsSheet({
               flexShrink: 0,
             }}
           >
-            <X style={{ width: 18, height: 18 }} />
+            <X aria-hidden="true" style={{ width: 18, height: 18 }} />
           </button>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 18px', minHeight: 0 }}>
-          {groups.map((group) => (
-            <div key={group.name} style={{ marginBottom: 22 }}>
+          {groups.map((group, groupIndex) => (
+            <div
+              key={group.name}
+              role={group.type === 'single' ? 'radiogroup' : 'group'}
+              aria-labelledby={`${titleId}-g${groupIndex}`}
+              aria-describedby={`${titleId}-h${groupIndex}`}
+              style={{ marginBottom: 22 }}
+            >
               <h3
+                id={`${titleId}-g${groupIndex}`}
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
@@ -251,10 +270,16 @@ export function ProductOptionsSheet({
                 }}
               >
                 {group.name}
-                {group.required && <span style={{ marginLeft: 4, color: 'var(--red)' }}>*</span>}
+                {group.required && (
+                  <>
+                    <span aria-hidden="true" style={{ marginLeft: 4, color: 'var(--red-ink)' }}>*</span>
+                    <span className="sr-only"> (Pflichtauswahl)</span>
+                  </>
+                )}
               </h3>
-              <p style={{ fontSize: 11, color: 'var(--mute)', margin: '0 0 10px' }}>
+              <p id={`${titleId}-h${groupIndex}`} style={{ fontSize: 12, color: 'var(--mute)', margin: '0 0 10px' }}>
                 {getGroupHint(group.type)}
+                {group.required ? ' · Pflicht' : ''}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {group.options.map((option) => {
@@ -266,6 +291,7 @@ export function ProductOptionsSheet({
                       <button
                         key={option.name}
                         type="button"
+                        aria-pressed={!exc}
                         onClick={() => toggleOption(group, option.name, option.priceModifier)}
                         style={{
                           display: 'flex',
@@ -278,12 +304,12 @@ export function ProductOptionsSheet({
                           cursor: 'pointer',
                           width: '100%',
                           textAlign: 'left',
-                          opacity: exc ? 0.7 : 1,
                           transition: 'border-color .12s, opacity .12s',
                         }}
                       >
                         <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span
+                            aria-hidden="true"
                             style={{
                               width: 20,
                               height: 20,
@@ -312,6 +338,7 @@ export function ProductOptionsSheet({
                           >
                             {option.name}
                           </span>
+                          {exc && <span className="sr-only">(abgewählt)</span>}
                         </span>
                         {option.priceModifier > 0 && !exc && (
                           <span className="mono" style={{ fontSize: 13, color: 'var(--mute)' }}>
@@ -327,6 +354,8 @@ export function ProductOptionsSheet({
                     <button
                       key={option.name}
                       type="button"
+                      role={isMultiple ? 'checkbox' : 'radio'}
+                      aria-checked={sel}
                       onClick={() => toggleOption(group, option.name, option.priceModifier)}
                       style={{
                         display: 'flex',
@@ -334,7 +363,7 @@ export function ProductOptionsSheet({
                         justifyContent: 'space-between',
                         padding: '11px 14px',
                         background: sel ? 'color-mix(in oklab, var(--green-soft) 60%, var(--paper))' : 'var(--paper-2)',
-                        border: `1px solid ${sel ? 'var(--green-ink)' : 'color-mix(in oklab, var(--ink) 12%, transparent)'}`,
+                        border: `1px solid ${sel ? 'var(--green-ink)' : 'var(--control-border)'}`,
                         borderRadius: 'var(--r-sm)',
                         cursor: 'pointer',
                         width: '100%',
@@ -344,11 +373,12 @@ export function ProductOptionsSheet({
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span
+                          aria-hidden="true"
                           style={{
                             width: 20,
                             height: 20,
                             borderRadius: isMultiple ? 6 : 999,
-                            border: `2px solid ${sel ? 'var(--green-ink)' : 'color-mix(in oklab, var(--ink) 18%, transparent)'}`,
+                            border: `2px solid ${sel ? 'var(--green-ink)' : 'var(--control-border)'}`,
                             background: sel ? 'var(--green-ink)' : 'transparent',
                             display: 'flex',
                             alignItems: 'center',
@@ -387,23 +417,29 @@ export function ProductOptionsSheet({
             flexShrink: 0,
           }}
         >
-          <div>
-            <p style={{ fontSize: 11, color: 'var(--mute)', margin: 0 }}>Gesamt</p>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 12, color: 'var(--mute)', margin: 0 }}>Gesamt</p>
             <p
               className="mono"
               style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 }}
             >
               {formatPrice(totalPrice, currency)}
             </p>
+            {missingGroups.length > 0 && (
+              <p id={missingId} style={{ fontSize: 12, color: 'var(--red-ink)', margin: '2px 0 0' }}>
+                Bitte wähle: {missingGroups.map((g) => g.name).join(', ')}
+              </p>
+            )}
           </div>
           <button
             type="button"
             onClick={handleConfirm}
             disabled={!requirementsMet}
+            aria-describedby={missingGroups.length > 0 ? missingId : undefined}
             className="btn btn--primary"
-            style={{ padding: '12px 20px', fontSize: 14 }}
+            style={{ padding: '12px 20px', fontSize: 14, flexShrink: 0 }}
           >
-            Hinzufügen
+            In den Warenkorb
           </button>
         </div>
       </div>

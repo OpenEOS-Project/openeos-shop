@@ -7,7 +7,9 @@
   --paper-2: oklch(0.965 0.018 90);
   --ink: oklch(0.16 0.014 80);
   --ink-2: oklch(0.36 0.012 80);
-  --mute: oklch(0.55 0.012 80);
+  /* --mute reaches 4.5:1 on --paper and --paper-2 (WCAG 1.4.3);
+     --mute-2 is only for decorative text on dark surfaces. */
+  --mute: oklch(0.49 0.012 80);
   --mute-2: oklch(0.7 0.01 80);
 
   --green: oklch(0.78 0.18 145);
@@ -16,6 +18,11 @@
   --green-ink: oklch(0.32 0.12 145);
 
   --red: #dc2626;
+  /* Text in red: 4.5:1 also on light red surfaces. */
+  --red-ink: #b91c1c;
+  /* Borders of form controls: at least 3:1 against the page (WCAG 1.4.11). */
+  --control-border: color-mix(in oklab, var(--ink) 45%, transparent);
+  --focus-ring: var(--green-ink);
 
   --r: 12px;
   --r-sm: 8px;
@@ -43,6 +50,64 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Sichtbarer Tastaturfokus fuer alle Bedienelemente (WCAG 2.4.7). */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.btn--primary:focus-visible,
+.cart-bar:focus-visible {
+  outline-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+/* Bewegung reduzieren, wenn das System es wuenscht (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Nur fuer Screenreader */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* „Zum Inhalt springen“ — erst beim Tastaturfokus sichtbar (WCAG 2.4.1). */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -100px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+  font-size: 14px;
+}
+.skip-link:focus {
+  top: 12px;
+}
+main:focus {
+  outline: none;
 }
 html,
 body {
@@ -439,7 +504,7 @@ button {
   display: inline-flex;
   align-items: center;
   background: var(--paper);
-  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border: 1px solid var(--control-border);
   border-radius: 99px;
 }
 .shop-cart__stepper button {
@@ -721,6 +786,15 @@ button {
 .card:hover {
   box-shadow: var(--sh-2);
 }
+/* Außerhalb der Öffnungszeiten: Karte zurückgenommen, Text bleibt lesbar
+   (früher opacity 0.55 — zu wenig Kontrast). */
+.card--disabled {
+  background: var(--paper);
+  border-style: dashed;
+}
+.card--disabled .card__image {
+  filter: grayscale(0.8);
+}
 .card__image {
   aspect-ratio: 4 / 3;
   background: color-mix(in oklab, var(--green-soft) 50%, var(--paper));
@@ -913,6 +987,7 @@ button {
   padding: 80px 20px;
   color: var(--mute);
 }
+.empty h1,
 .empty h2 {
   font-size: 24px;
   font-weight: 700;
@@ -960,13 +1035,20 @@ button {
   gap: 12px;
   padding: 12px 14px;
   border-radius: 10px;
-  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border: 1px solid var(--control-border);
   background: var(--paper);
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
 }
 .checkout-fulfillment__opt:hover {
   border-color: color-mix(in oklab, var(--ink) 22%, transparent);
+}
+.checkout-fulfillment__opt:focus-within {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.checkout-fulfillment__opt input:focus-visible {
+  outline: none;
 }
 .checkout-fulfillment__opt.is-selected {
   border-color: var(--green-ink);
@@ -1046,17 +1128,68 @@ button {
   width: 100%;
   padding: 11px 13px;
   background: var(--paper);
-  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border: 1px solid var(--control-border);
   border-radius: var(--r-sm);
   font-size: 14px;
   color: var(--ink);
   font-family: inherit;
-  outline: none;
   transition: border-color 0.12s, box-shadow 0.12s;
 }
-.field input:focus {
+.field input:focus-visible,
+.withdrawal__form textarea:focus-visible {
   border-color: var(--green-ink);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--green-ink) 25%, transparent);
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+.field input[aria-invalid='true'],
+.withdrawal__form textarea[aria-invalid='true'] {
+  border-color: var(--red-ink);
+  border-width: 2px;
+}
+/* Fehlermeldung direkt unter dem Feld (WCAG 3.3.1) */
+.field__error {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--red-ink);
+}
+.field .field__error {
+  font-size: 13px;
+  color: var(--red-ink);
+}
+.field__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--mute);
+}
+.field .field__hint {
+  font-weight: 400;
+  color: var(--mute);
+}
+.field__req,
+.field .field__req {
+  color: var(--red-ink);
+}
+.field .field__error span {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  letter-spacing: normal;
+}
+.checkout-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.checkout-fieldset legend {
+  padding: 0;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 14px;
 }
 
 /* 404 — unbekannte Event-IDs und fehlende Dateien */
@@ -1138,7 +1271,13 @@ button {
   align-items: center;
   gap: 4px 8px;
   font-size: 12px;
-  color: var(--mute-2);
+  color: var(--mute);
+}
+/* Bedienziele in der Fusszeile mindestens 24 px hoch (WCAG 2.5.8). */
+.shop-legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
 }
 .shop-legal__platform .mono { font-size: 11px; }
 .shop-legal__form-hint {
@@ -1187,7 +1326,7 @@ button {
   width: 100%;
   padding: 11px 13px;
   background: var(--paper);
-  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border: 1px solid var(--control-border);
   border-radius: var(--r-sm);
   font: inherit;
   font-size: 14px;
@@ -1207,8 +1346,9 @@ button {
   margin: 0;
   padding: 10px 12px;
   border-radius: 8px;
-  background: color-mix(in oklab, var(--red) 12%, transparent);
-  color: var(--red);
+  background: color-mix(in oklab, var(--red) 8%, var(--paper));
+  border: 1px solid color-mix(in oklab, var(--red) 40%, transparent);
+  color: var(--red-ink);
   font-size: 13px;
 }
 .withdrawal__done {
